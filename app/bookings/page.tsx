@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { getMyBookings, cancelBooking, getMyBusBookings, cancelBusBooking, submitReview, Booking, BusBooking } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Hotel, Bus as BusIcon, X, Star, Loader2, ArrowRight, MapPin, Calendar } from "lucide-react";
+import { Hotel, Bus as BusIcon, X, Star, Loader2, ArrowRight, MapPin, Calendar, Check } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   CONFIRMED: "bg-green-500/10 text-green-500 border-green-500/20",
@@ -25,6 +25,7 @@ export default function BookingsPage() {
   const [reviewText, setReviewText] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState("");
+  const [cancelSuccess, setCancelSuccess] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) { router.push("/login"); return; }
@@ -41,6 +42,8 @@ export default function BookingsPage() {
     try {
       const updated = await cancelBooking(id);
       setHotelBookings((prev) => prev.map((b) => b.id === id ? updated : b));
+      setCancelSuccess("Booking cancelled. A confirmation email has been sent.");
+      setTimeout(() => setCancelSuccess(""), 5000);
     } catch { } finally { setCancellingId(null); }
   };
 
@@ -185,6 +188,11 @@ export default function BookingsPage() {
             <p className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-6">User Concierge</p>
             <h1 className="text-6xl md:text-8xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8]">The Archives.</h1>
           </div>
+          {cancelSuccess && (
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-8 py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-2xl z-[100] animate-slide-up flex items-center gap-4">
+              <Check size={16} /> {cancelSuccess}
+            </div>
+          )}
           <div className="flex gap-4 p-2 bg-[var(--card)] border-2 border-[var(--card-border)] rounded-[40px] shadow-2xl shadow-[#ec6a2a]/5 animate-slide-up">
             <button onClick={() => setTab("hotels")} className={`flex items-center gap-4 px-10 py-5 rounded-[32px] text-[10px] font-black uppercase tracking-widest transition-all ${tab === "hotels" ? "bg-[#ec6a2a] text-white shadow-xl shadow-[#ec6a2a]/20" : "text-[var(--foreground)] opacity-40 hover:opacity-100"}`}>
               <Hotel size={18} /> Stays

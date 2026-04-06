@@ -287,6 +287,10 @@ export default function HotelDetailPage() {
             <h3 className="text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase mb-6 leading-[0.8]">Reservation <br /> Locked.</h3>
             <p className="text-[var(--foreground)] opacity-50 font-bold mb-16 leading-relaxed max-w-sm mx-auto">
               Your editorial stay at <span className="text-[var(--foreground)] opacity-100">{hotel.name}</span> has been confirmed. You can access your itinerary in the archives.
+              <br />
+              <span className="text-[#ec6a2a] text-[10px] uppercase tracking-widest mt-4 block">
+                📧 Confirmation email sent to your registered address
+              </span>
             </p>
 
             <div className="flex flex-col gap-6">
