@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { getBus, bookBus, Bus } from "@/lib/api";
+import { getBus, bookBus, verifyBusPayment, Bus } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { MapPin, Clock, Users, Loader2, Check, ArrowRight } from "lucide-react";
 
@@ -31,20 +31,77 @@ export default function BusDetailPage() {
     setSelectedSeats((prev) => prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]);
   };
 
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBook = async () => {
     if (!user) { router.push("/login"); return; }
     if (!selectedSeats.length) return;
     setBookingError(""); setBookingSuccess(""); setBookingLoading(true);
+    
     try {
-      await bookBus(id, selectedSeats);
-      setBookingSuccess(`Route Confirmed.`);
-      setShowBookingModal(true);
-      setSelectedSeats([]);
-      const updated = await getBus(id);
-      setBus(updated);
-    } catch (err: unknown) {
-      setBookingError(err instanceof Error ? err.message : "Transmission failed");
-    } finally {
+      const sdkLoaded = await loadRazorpay();
+      if (!sdkLoaded) {
+        setBookingError("Razorpay SDK failed to load. Please check your connection.");
+        setBookingLoading(false);
+        return;
+      }
+
+      const booking = await bookBus(id, selectedSeats);
+      
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+        amount: booking.total_price * 100,
+        currency: "INR",
+        name: "GoTravel",
+        description: `Bus Booking: ${bus?.name} (${selectedSeats.join(", ")})`,
+        order_id: booking.razorpay_order_id,
+        handler: async function (response: any) {
+          try {
+            setBookingLoading(true);
+            await verifyBusPayment({
+              booking_id: booking.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setBookingSuccess(`Route Confirmed & Payment Verified.`);
+            setShowBookingModal(true);
+            setSelectedSeats([]);
+            const updated = await getBus(id);
+            setBus(updated);
+          } catch (err: any) {
+            setBookingError(err.message || "Payment verification failed");
+          } finally {
+            setBookingLoading(false);
+          }
+        },
+        prefill: {
+          name: user.name || "",
+          email: user.email || "",
+          contact: user.phone || "",
+        },
+        theme: {
+          color: "#ec6a2a",
+        },
+        modal: {
+          ondismiss: function() {
+            setBookingLoading(false);
+          }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (err: any) {
+      setBookingError(err.message || "Transmission failed");
       setBookingLoading(false);
     }
   };

@@ -109,9 +109,17 @@ export const getHotel = (id: string) => request<Hotel>(`/hotels/${id}`);
 
 // ── Hotel Bookings ────────────────────────────────────────────────────────────
 
-// POST /bookings/  — body: BookingCreate
+// POST /bookings/
 export const createBooking = (data: BookingCreate) =>
   request<Booking>("/bookings/", { method: "POST", body: JSON.stringify(data) });
+
+// POST /bookings/verify-payment
+export const verifyPayment = (data: {
+  booking_id: string;
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}) => request<Booking>("/bookings/verify-payment", { method: "POST", body: JSON.stringify(data) });
 
 // GET /bookings/
 export const getMyBookings = () => request<Booking[]>("/bookings/");
@@ -153,6 +161,14 @@ export const bookBus = (bus_id: string, seat_numbers: number[]) =>
     method: "POST",
     body: JSON.stringify({ bus_id, seat_numbers }),
   });
+
+// POST /buses/verify-payment
+export const verifyBusPayment = (data: {
+  booking_id: string;
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}) => request<BusBooking>("/buses/verify-payment", { method: "POST", body: JSON.stringify(data) });
 
 // GET /buses/bookings/
 export const getMyBusBookings = (page = 1, limit = 10) =>
@@ -252,8 +268,11 @@ export interface Booking {
   num_rooms: number;
   num_guests: number;
   total_price: number;
-  status: "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  status: "CONFIRMED" | "CANCELLED" | "COMPLETED" | "PAYMENT_PENDING" | "FAILED";
   created_at: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
 }
 
 export interface Bus {
@@ -286,8 +305,11 @@ export interface BusBooking {
   journey_date: string;
   from_city: string;
   to_city: string;
-  status: "CONFIRMED" | "CANCELLED";
+  status: "CONFIRMED" | "CANCELLED" | "PAYMENT_PENDING" | "FAILED";
   created_at: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
 }
 
 export interface Review {

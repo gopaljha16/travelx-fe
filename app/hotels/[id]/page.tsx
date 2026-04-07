@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { getHotel, getHotelReviews, createBooking, Hotel, Review } from "@/lib/api";
+import { getHotel, getHotelReviews, createBooking, verifyPayment, Hotel, Review, Booking } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { MapPin, Wifi, Car, Waves, PawPrint, Users, BedDouble, Loader2, Star, Check, ArrowRight } from "lucide-react";
 
@@ -55,17 +55,83 @@ export default function HotelDetailPage() {
     load();
   }, [id, user, authLoading, router]);
 
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { router.push("/login"); return; }
     setBookingError(""); setBookingSuccess(""); setBookingLoading(true);
+    
     try {
-      await createBooking({ hotel_id: id, room_type_name: selectedRoom, check_in: checkIn, check_out: checkOut, num_rooms: numRooms, num_guests: numGuests });
-      setBookingSuccess("Stay Reserved.");
-      setShowBookingModal(true);
-    } catch (err: unknown) {
-      setBookingError(err instanceof Error ? err.message : "Reservation failed");
-    } finally {
+      const res = await loadRazorpay();
+      if (!res) {
+        setBookingError("Razorpay SDK failed to load. Are you online?");
+        setBookingLoading(false);
+        return;
+      }
+
+      const booking = await createBooking({ 
+        hotel_id: id, 
+        room_type_name: selectedRoom, 
+        check_in: checkIn, 
+        check_out: checkOut, 
+        num_rooms: numRooms, 
+        num_guests: numGuests 
+      });
+
+      if (!hotel) return;
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+        amount: booking.total_price * 100,
+        currency: "INR",
+        name: "GoTravel",
+        description: `Booking at ${hotel.name}`,
+        order_id: booking.razorpay_order_id,
+        handler: async function (response: any) {
+          try {
+            setBookingLoading(true);
+            await verifyPayment({
+              booking_id: booking.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setBookingSuccess("Stay Reserved & Payment Verified.");
+            setShowBookingModal(true);
+          } catch (err: any) {
+            setBookingError(err.message || "Payment verification failed");
+          } finally {
+            setBookingLoading(false);
+          }
+        },
+        prefill: {
+          name: user.name || "",
+          email: user.email || "",
+          contact: user.phone || "",
+        },
+        theme: {
+          color: "#ec6a2a",
+        },
+        modal: {
+            ondismiss: function() {
+                setBookingLoading(false);
+            }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (err: any) {
+      setBookingError(err.message || "Reservation failed");
       setBookingLoading(false);
     }
   };
