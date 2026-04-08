@@ -6,10 +6,10 @@ import { getMyBookings, cancelBooking, getMyBusBookings, cancelBusBooking, submi
 import { useAuth } from "@/context/AuthContext";
 import { Hotel, Bus as BusIcon, X, Star, Loader2, ArrowRight, MapPin, Calendar, Check } from "lucide-react";
 
-const statusColors: Record<string, string> = {
-  CONFIRMED: "bg-green-500/10 text-green-500 border-green-500/20",
-  CANCELLED: "bg-red-500/10 text-red-500 border-red-500/20",
-  COMPLETED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+const statusStyles: Record<string, string> = {
+  CONFIRMED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-gray-100 text-gray-800",
+  COMPLETED: "bg-blue-100 text-blue-800",
 };
 
 export default function BookingsPage() {
@@ -60,7 +60,7 @@ export default function BookingsPage() {
     setReviewLoading(true);
     try {
       await submitReview({ booking_id: reviewModal.bookingId, hotel_id: reviewModal.hotelId, rating: reviewRating, review_text: reviewText });
-      setReviewSuccess("Review submitted!");
+      setReviewSuccess("Review submitted successfully!");
       setTimeout(() => { setReviewModal(null); setReviewSuccess(""); setReviewText(""); setReviewRating(5); }, 1500);
     } catch { } finally { setReviewLoading(false); }
   };
@@ -79,91 +79,67 @@ export default function BookingsPage() {
   const pastBuses = busBookings.filter((b) => !isUpcoming(b.journey_date) || b.status === "CANCELLED");
 
   const BookingSection = ({ title, bookings, type }: { title: string, bookings: any[], type: 'hotel' | 'bus' }) => (
-    <div className="mb-24 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-4 mb-12">
-        <h2 className="text-4xl md:text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8]">{title}.</h2>
-        <span className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.3em]">{bookings.length} {bookings.length === 1 ? 'Legacy' : 'Legacies'}</span>
-      </div>
+    <div className="mb-12">
+      <h2 className="text-[22px] font-semibold text-gray-900 mb-6">{title}</h2>
       
-      <div className="space-y-20">
+      <div className="space-y-6">
         {bookings.map((b) => (
-          <div key={b.id} className="bg-[var(--card)] rounded-[56px] border-2 border-[var(--card-border)] p-8 md:p-10 flex flex-col md:flex-row gap-10 hover:border-[#ec6a2a]/20 transition-all duration-500 group relative overflow-hidden">
-            <div className="w-full md:w-56 h-56 md:h-56 bg-[var(--muted)] rounded-[40px] overflow-hidden flex-shrink-0 relative">
-              {type === 'hotel' ? (
-                b.hotel_image ? <img src={b.hotel_image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-[var(--foreground)] opacity-10 text-5xl font-black">🏨</div>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-5xl grayscale opacity-20 group-hover:grayscale-0 group-hover:opacity-100 transition-all">🚌</div>
-              )}
-              <div className={`absolute top-4 left-4 px-4 py-1.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border-2 shadow-xl ${statusColors[b.status]}`}>
-                {b.status}
-              </div>
+          <div key={b.id} className="bg-white border border-gray-200 rounded-[12px] overflow-hidden flex flex-col sm:flex-row group transition-shadow hover:shadow-md">
+            
+            <div className="w-full sm:w-64 h-48 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+               {type === 'hotel' ? (
+                b.hotel_image ? <img src={b.hotel_image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Hotel size={40} /></div>
+               ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300"><BusIcon size={40} /></div>
+               )}
             </div>
             
-            <div className="flex-1 flex flex-col">
-              <div className="flex flex-col md:flex-row items-start justify-between gap-6">
-                <div>
-                  <h3 className="text-3xl font-black text-[var(--foreground)] tracking-tighter uppercase line-clamp-1 mb-2">
+            <div className="flex-1 p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between gap-4 mb-1">
+                  <h3 className="text-xl font-semibold text-gray-900 line-clamp-1">
                     {type === 'hotel' ? (b.hotel_name || "Hotel Stay") : `${b.from_city} to ${b.to_city}`}
                   </h3>
-                  <div className="flex flex-wrap gap-3">
-                    <div className="flex items-center gap-3 text-[#ec6a2a] font-black text-[10px] bg-[#ec6a2a]/10 px-4 py-1.5 rounded-full uppercase tracking-widest border border-[#ec6a2a]/20">
-                      {type === 'hotel' ? b.room_type_name : (b.bus_type || "Standard Class")}
-                    </div>
-                    {type === 'bus' && (
-                      <div className="flex items-center gap-3 text-[var(--foreground)] opacity-40 font-black text-[10px] bg-[var(--muted)] px-4 py-1.5 rounded-full uppercase tracking-widest border border-[var(--card-border)]">
-                        Seat: {b.seat_numbers.join(", ")}
-                      </div>
-                    )}
-                  </div>
+                  <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase rounded-full whitespace-nowrap ${statusStyles[b.status] || "bg-gray-100 text-gray-800"}`}>
+                    {b.status}
+                  </span>
                 </div>
-                <div className="text-left md:text-right">
-                  <div className="text-4xl font-black text-[var(--foreground)] tracking-tighter">₹{b.total_price.toLocaleString()}</div>
-                  <div className="text-[10px] text-[var(--foreground)] opacity-20 font-black uppercase tracking-[0.2em] mt-1">Settlement Price</div>
+                
+                <p className="text-[15px] text-gray-500 mb-2">
+                  {type === 'hotel' ? b.room_type_name : (b.bus_type || "Standard Class")}
+                  {type === 'bus' && ` · Seat ${b.seat_numbers.join(", ")}`}
+                </p>
+                <div className="text-[14px] text-gray-600 font-medium">
+                  {type === 'hotel' ? `${b.check_in} — ${b.check_out}` : `Departs: ${b.journey_date}`}
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6 mt-10">
-                <div className="bg-[var(--muted)] p-5 rounded-[28px] border-2 border-[var(--card-border)]/50">
-                  <div className="text-[9px] text-[#ec6a2a] font-black uppercase tracking-widest mb-2">{type === 'hotel' ? 'Arrival' : 'Departure'}</div>
-                  <div className="text-sm font-black text-[var(--foreground)] uppercase">{type === 'hotel' ? b.check_in : b.journey_date}</div>
-                </div>
-                <div className="bg-[var(--muted)] p-5 rounded-[28px] border-2 border-[var(--card-border)]/50">
-                  <div className="text-[9px] text-[#ec6a2a] font-black uppercase tracking-widest mb-2">{type === 'hotel' ? 'Departure' : 'Terminal Path'}</div>
-                  <div className="text-sm font-black text-[var(--foreground)] uppercase">{type === 'hotel' ? b.check_out : `${b.from_city} &rarr; ${b.to_city}`}</div>
+                <div className="mt-2 text-lg font-semibold text-gray-900">
+                  ₹{b.total_price.toLocaleString()}
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-6 mt-auto pt-10 border-t border-[var(--card-border)]/50">
-                <div className="flex gap-4">
+              <div className="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-gray-100">
                   {b.status === "CONFIRMED" && (
                     <button onClick={() => type === 'hotel' ? handleCancelHotel(b.id) : handleCancelBus(b.id)} disabled={cancellingId === b.id}
-                      className="flex items-center gap-3 text-[10px] font-black text-red-500 bg-red-500/10 hover:bg-red-500/20 px-6 py-3 rounded-2xl transition-all disabled:opacity-50 uppercase tracking-widest border-2 border-red-500/20">
-                      {cancellingId === b.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} Revoke Booking
+                      className="px-4 py-2 border border-black rounded-lg text-[14px] font-semibold text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:border-gray-300 disabled:text-gray-400 flex items-center gap-2">
+                      {cancellingId === b.id && <Loader2 size={14} className="animate-spin" />} Cancel reservation
                     </button>
                   )}
                   {type === 'hotel' && b.latitude && b.longitude && (
-                    <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${b.latitude},${b.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-[10px] font-black text-[#ec6a2a] bg-[#ec6a2a]/10 hover:bg-[#ec6a2a]/20 px-6 py-3 rounded-2xl transition-all uppercase tracking-widest border-2 border-[#ec6a2a]/20"
-                    >
-                      <MapPin size={14} /> Coordinates
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${b.latitude},${b.longitude}`} target="_blank" rel="noopener noreferrer"
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-[14px] font-semibold text-gray-900 hover:border-black hover:bg-gray-50 transition-colors flex items-center gap-2">
+                      Get directions
                     </a>
                   )}
                   {b.status === "COMPLETED" && type === 'hotel' && (
                     <button onClick={() => setReviewModal({ bookingId: b.id, hotelId: b.hotel_id })}
-                      className="flex items-center gap-3 text-[10px] font-black text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-6 py-3 rounded-2xl transition-all uppercase tracking-widest border-2 border-amber-500/20">
-                      <Star size={14} /> Submit Feedback
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-[14px] font-semibold text-gray-900 hover:border-black hover:bg-gray-50 transition-colors flex items-center gap-2">
+                      Write review
                     </button>
                   )}
-                </div>
-                <button 
-                  onClick={() => router.push(`/bookings/${b.id}?type=${type}`)}
-                  className="text-[10px] font-black text-[var(--foreground)] opacity-40 hover:opacity-100 flex items-center gap-3 transition-opacity uppercase tracking-widest group"
-                >
-                  View Editorial Receipt <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </button>
+                  <button onClick={() => router.push(`/bookings/${b.id}?type=${type}`)}
+                      className="ml-auto px-4 py-2 text-[14px] font-semibold text-[#FF6B35] hover:bg-pink-50 rounded-lg transition-colors flex items-center gap-1">
+                      Show details
+                  </button>
               </div>
             </div>
           </div>
@@ -173,109 +149,121 @@ export default function BookingsPage() {
   );
 
   if (authLoading || loading) return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors"><Navbar />
-      <div className="flex items-center justify-center min-h-[60vh]"><Loader2 size={40} className="animate-spin text-[#ec6a2a]" /></div>
+    <div className="min-h-screen bg-white"><Navbar />
+      <div className="flex items-center justify-center min-h-[60vh]"><Loader2 size={40} className="animate-spin text-gray-900" /></div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pb-40 transition-colors duration-500">
+    <div className="min-h-screen bg-white pb-24">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-6 pt-24">
-        <header className="mb-24 flex flex-col md:flex-row md:items-end justify-between gap-12">
-          <div className="animate-fade-in">
-            <p className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-6">User Concierge</p>
-            <h1 className="text-6xl md:text-8xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8]">The Archives.</h1>
-          </div>
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <header className="mb-10">
+          <h1 className="text-[32px] font-semibold text-gray-900 mb-6">Trips</h1>
+          
           {cancelSuccess && (
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-8 py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-2xl z-[100] animate-slide-up flex items-center gap-4">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-[14px] font-medium flex items-center gap-2 max-w-xl">
               <Check size={16} /> {cancelSuccess}
             </div>
           )}
-          <div className="flex gap-4 p-2 bg-[var(--card)] border-2 border-[var(--card-border)] rounded-[40px] shadow-2xl shadow-[#ec6a2a]/5 animate-slide-up">
-            <button onClick={() => setTab("hotels")} className={`flex items-center gap-4 px-10 py-5 rounded-[32px] text-[10px] font-black uppercase tracking-widest transition-all ${tab === "hotels" ? "bg-[#ec6a2a] text-white shadow-xl shadow-[#ec6a2a]/20" : "text-[var(--foreground)] opacity-40 hover:opacity-100"}`}>
-              <Hotel size={18} /> Stays
+
+          <div className="flex border-b border-gray-200">
+            <button 
+              onClick={() => setTab("hotels")} 
+              className={`pb-4 px-2 mr-6 text-[15px] font-medium transition-colors border-b-2 ${tab === "hotels" ? "border-black text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"}`}
+            >
+              Stays
             </button>
-            <button onClick={() => setTab("buses")} className={`flex items-center gap-4 px-10 py-5 rounded-[32px] text-[10px] font-black uppercase tracking-widest transition-all ${tab === "buses" ? "bg-[#ec6a2a] text-white shadow-xl shadow-[#ec6a2a]/20" : "text-[var(--foreground)] opacity-40 hover:opacity-100"}`}>
-              <BusIcon size={18} /> Express
+            <button 
+              onClick={() => setTab("buses")} 
+              className={`pb-4 px-2 text-[15px] font-medium transition-colors border-b-2 ${tab === "buses" ? "border-black text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"}`}
+            >
+              Buses
             </button>
           </div>
         </header>
 
-        {tab === "hotels" && (
-          <div className="animate-fade-in">
-            {upcomingHotels.length > 0 && <BookingSection title="Active Stays" bookings={upcomingHotels} type="hotel" />}
-            {pastHotels.length > 0 && <BookingSection title="History" bookings={pastHotels} type="hotel" />}
-            {upcomingHotels.length === 0 && pastHotels.length === 0 && (
-              <div className="text-center py-40 bg-[var(--card)] rounded-[64px] border-2 border-dashed border-[var(--card-border)] flex flex-col items-center">
-                <div className="w-24 h-24 rounded-[32px] bg-[var(--muted)] flex items-center justify-center text-[var(--foreground)] opacity-10 text-5xl mb-10">🏨</div>
-                <h3 className="text-4xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-6">Archive Empty.</h3>
-                <p className="text-[var(--foreground)] opacity-40 font-bold max-w-xs mx-auto mb-12">Looking for a place to stay? Our collection is curated for you.</p>
-                <button onClick={() => router.push("/hotels")} className="bg-[#ec6a2a] text-white px-12 py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-[#ec6a2a]/20 hover:scale-[1.05] active:scale-95 transition-all">Explore Collection</button>
-              </div>
-            )}
-          </div>
-        )}
+        <main>
+          {tab === "hotels" && (
+            <div>
+              {upcomingHotels.length > 0 && <BookingSection title="Upcoming" bookings={upcomingHotels} type="hotel" />}
+              {pastHotels.length > 0 && <BookingSection title="Where you've been" bookings={pastHotels} type="hotel" />}
+              
+              {upcomingHotels.length === 0 && pastHotels.length === 0 && (
+                <div className="pt-20 pb-24 border-t border-gray-200">
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">No trips booked... yet!</h3>
+                  <p className="text-[15px] text-gray-600 mb-8 max-w-md">Time to dust off your bags and start planning your next adventure.</p>
+                  <button onClick={() => router.push("/hotels")} className="px-6 py-3 border border-black rounded-lg text-[15px] font-semibold text-black hover:bg-gray-50 transition-colors">Start searching</button>
+                </div>
+              )}
+            </div>
+          )}
 
-        {tab === "buses" && (
-          <div className="animate-fade-in">
-            {upcomingBuses.length > 0 && <BookingSection title="On-Path" bookings={upcomingBuses} type="bus" />}
-            {pastBuses.length > 0 && <BookingSection title="Terminal Records" bookings={pastBuses} type="bus" />}
-            {upcomingBuses.length === 0 && pastBuses.length === 0 && (
-              <div className="text-center py-40 bg-[var(--card)] rounded-[64px] border-2 border-dashed border-[var(--card-border)] flex flex-col items-center">
-                <div className="w-24 h-24 rounded-[32px] bg-[var(--muted)] flex items-center justify-center text-[var(--foreground)] opacity-10 text-5xl mb-10">🚌</div>
-                <h3 className="text-4xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-6">No Records.</h3>
-                <p className="text-[var(--foreground)] opacity-40 font-bold max-w-xs mx-auto mb-12">Ready for your next express journey? Discover routes across the network.</p>
-                <button onClick={() => router.push("/buses")} className="bg-[#ec6a2a] text-white px-12 py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-[#ec6a2a]/20 hover:scale-[1.05] active:scale-95 transition-all">Select Route</button>
-              </div>
-            )}
-          </div>
-        )}
+          {tab === "buses" && (
+            <div>
+              {upcomingBuses.length > 0 && <BookingSection title="Upcoming Journeys" bookings={upcomingBuses} type="bus" />}
+              {pastBuses.length > 0 && <BookingSection title="Past Routes" bookings={pastBuses} type="bus" />}
+              
+              {upcomingBuses.length === 0 && pastBuses.length === 0 && (
+                <div className="pt-20 pb-24 border-t border-gray-200">
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">No bus trips planned.</h3>
+                  <p className="text-[15px] text-gray-600 mb-8 max-w-md">Discover seamless intercity journeys across our network.</p>
+                  <button onClick={() => router.push("/buses")} className="px-6 py-3 border border-black rounded-lg text-[15px] font-semibold text-black hover:bg-gray-50 transition-colors">Find a route</button>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
       </div>
 
       {reviewModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-3xl flex items-center justify-center p-6 z-50 transition-all duration-500">
-          <div className="bg-[var(--card)] rounded-[80px] p-12 md:p-20 w-full max-w-3xl shadow-2xl border-2 border-[var(--card-border)] animate-slide-up relative overflow-hidden">
-            <h3 className="text-5xl md:text-7xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-10">Feedback.</h3>
-            <p className="text-[var(--foreground)] opacity-50 font-bold text-lg mb-16 leading-relaxed">Your story helps other travelers discover elite stays and helps us refine the TravelX experience.</p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-xl relative animate-fade-in">
+            <h3 className="text-[26px] font-semibold text-gray-900 mb-2">How was your stay?</h3>
+            <p className="text-gray-500 mb-8 text-[15px]">Sharing your experience helps other travelers make better choices.</p>
             
             {reviewSuccess ? (
-              <div className="text-center py-20 text-[#ec6a2a] font-black text-4xl tracking-tighter uppercase">{reviewSuccess}</div>
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check size={32} />
+                </div>
+                <div className="text-[18px] font-semibold text-gray-900">{reviewSuccess}</div>
+              </div>
             ) : (
               <>
-                <div className="flex justify-center gap-4 mb-20">
+                <div className="flex justify-center gap-3 mb-8">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => setReviewRating(star)}
-                      className={`text-5xl transition-all hover:scale-125 active:scale-95 ${star <= reviewRating ? "text-[#ec6a2a]" : "text-[var(--foreground)] opacity-10"}`}
+                      className={`text-3xl transition-transform hover:scale-110 ${star <= reviewRating ? "text-[#FF6B35]" : "text-gray-200"}`}
                     >
-                      <Star size={56} fill={star <= reviewRating ? "currentColor" : "none"} strokeWidth={star <= reviewRating ? 0 : 2} />
+                      <Star size={36} fill={star <= reviewRating ? "currentColor" : "none"} strokeWidth={star <= reviewRating ? 0 : 2} />
                     </button>
                   ))}
                 </div>
                 
                 <textarea
-                  placeholder="Draft your editorial review..."
+                  placeholder="Share a few details about your stay..."
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  className="w-full p-10 bg-[var(--muted)] border-2 border-transparent focus:border-[#ec6a2a]/20 focus:bg-[var(--card)] rounded-[48px] mb-16 outline-none transition-all resize-none h-60 font-medium text-[var(--foreground)] placeholder:text-[var(--foreground)] placeholder:opacity-20 text-lg"
+                  className="w-full p-4 border border-gray-300 focus:border-black focus:ring-1 focus:ring-black rounded-xl mb-6 outline-none transition-all resize-none h-32 font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal text-[15px]"
                 />
                 
-                <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex gap-4">
                   <button
                     onClick={() => setReviewModal(null)}
-                    className="flex-1 text-[var(--foreground)] opacity-40 font-black py-6 hover:opacity-100 transition-opacity uppercase tracking-[0.3em] text-xs"
+                    className="w-full py-3.5 text-[15px] font-semibold text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    Hold Review
+                    Cancel
                   </button>
                   <button
                     onClick={handleReview}
                     disabled={reviewLoading}
-                    className="flex-[2] bg-[#ec6a2a] text-white py-6 rounded-[32px] font-black shadow-2xl shadow-[#ec6a2a]/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 uppercase tracking-[0.3em] text-xs flex items-center justify-center"
+                    className="w-full bg-[#FF6B35] hover:bg-[#e55a25] text-white py-3.5 rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center text-[15px]"
                   >
-                    {reviewLoading ? <Loader2 className="animate-spin" /> : "Transmit Feedback"}
+                    {reviewLoading ? <Loader2 size={20} className="animate-spin" /> : "Submit"}
                   </button>
                 </div>
               </>
