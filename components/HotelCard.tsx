@@ -4,9 +4,9 @@ import { Hotel } from "@/lib/api";
 import { MapPin, Wifi, Car, Waves, PawPrint, Star } from "lucide-react";
 
 const amenityIcons: Record<string, React.ReactNode> = {
-  Wifi: <Wifi size={12} />,
-  Pool: <Waves size={12} />,
-  Parking: <Car size={12} />,
+  Wifi: <Wifi size={14} />,
+  Pool: <Waves size={14} />,
+  Parking: <Car size={14} />,
 };
 
 export default function HotelCard({ hotel }: { hotel: Hotel }) {
@@ -17,59 +17,58 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
 
   return (
     <Link href={`/hotels/${id}`} className="block group">
-      <div className="bg-[var(--card)] rounded-[48px] border-2 border-[var(--card-border)] hover:border-[#ec6a2a]/30 hover:shadow-2xl hover:shadow-[#ec6a2a]/10 transition-all duration-500 flex flex-col md:flex-row overflow-hidden relative">
-        <div className="w-full md:w-80 h-64 md:h-auto flex-shrink-0 bg-[var(--muted)] overflow-hidden relative">
-          {hotel.images[0] ? (
-            <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+      <div className="bg-white rounded-2xl border border-gray-200 hover:border-[#FF6B35]/50 hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row overflow-hidden relative">
+        <div className="w-full md:w-64 h-56 md:h-auto flex-shrink-0 bg-gray-100 overflow-hidden relative">
+          {hotel.images && hotel.images[0] ? (
+            <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[var(--foreground)] opacity-10 text-6xl font-black">🏨</div>
+            <div className="w-full h-full flex items-center justify-center text-gray-300 text-5xl">🏨</div>
           )}
           {hotel.is_pet_allowed && (
-            <div className="absolute top-6 left-6 bg-[#ec6a2a] p-2.5 rounded-2xl shadow-xl shadow-[#ec6a2a]/20">
-              <PawPrint size={16} className="text-white" />
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-sm">
+              <PawPrint size={14} className="text-[#FF6B35]" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
 
-        <div className="flex-1 p-8 md:p-10 flex flex-col justify-between">
+        <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <h3 className="text-3xl font-black text-[var(--foreground)] group-hover:text-[#ec6a2a] transition-colors leading-none mb-4 uppercase tracking-tighter">{hotel.name}</h3>
-                <div className="flex items-center gap-2 text-[var(--foreground)] opacity-40 text-[10px] font-black uppercase tracking-widest">
-                  <MapPin size={14} className="text-[#ec6a2a]" /> {hotel.city} — {hotel.address.split(",")[0]}
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#FF6B35] transition-colors leading-tight mb-1">{hotel.name}</h3>
+                <div className="flex items-center gap-1.5 text-gray-500 text-sm font-medium">
+                  <MapPin size={14} className="text-[#FF6B35]" /> {hotel.city} — {hotel.address.split(",")[0]}
                 </div>
               </div>
-              <div className="bg-[#ec6a2a] text-white text-sm font-black px-4 py-2 rounded-2xl shadow-lg shadow-[#ec6a2a]/20">
+              <div className="bg-[#e8f5e9] text-[#2e7d32] text-sm font-bold px-2.5 py-1 rounded-md shadow-sm">
                 {hotel.rating > 0 ? hotel.rating.toFixed(1) : "New"}
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-3 mt-8">
+            <div className="flex flex-wrap gap-2 mt-4">
               {hotel.amenities.slice(0, 3).map((a) => (
-                <span key={a} className="flex items-center gap-2.5 text-[9px] font-black uppercase tracking-widest bg-[var(--muted)] text-[var(--foreground)] px-4 py-2 rounded-xl border border-[var(--card-border)] whitespace-nowrap">
+                <span key={a} className="flex items-center gap-1.5 text-xs font-medium bg-gray-50 text-gray-700 px-2.5 py-1.5 rounded-md border border-gray-100 whitespace-nowrap">
                   {amenityIcons[a] || null} {a}
                 </span>
               ))}
               {hotel.amenities.length > 3 && (
-                <span className="text-[10px] font-black text-[var(--foreground)] opacity-20 self-center ml-2">+{hotel.amenities.length - 3} more</span>
+                <span className="text-xs font-medium text-gray-500 self-center ml-1">+{hotel.amenities.length - 3} more</span>
               )}
             </div>
           </div>
           
-          <div className="flex items-center justify-between mt-12 pt-8 border-t border-[var(--card-border)]/50">
-            <div className="flex items-center gap-1.5 text-[#ec6a2a]">
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-1 text-[#FF6B35]">
               {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} size={14} fill={s <= Math.round(hotel.rating) ? "currentColor" : "none"} strokeWidth={2} />
+                <Star key={s} size={14} fill={s <= Math.round(hotel.rating) ? "currentColor" : "none"} strokeWidth={s <= Math.round(hotel.rating) ? 0 : 2} />
               ))}
             </div>
             <div className="text-right">
-              <div className="flex items-baseline gap-2 justify-end">
-                <span className="text-[9px] text-[var(--foreground)] opacity-30 font-black uppercase tracking-widest">from</span>
-                <span className="text-4xl font-black text-[var(--foreground)] tracking-tighter">₹{minPrice.toLocaleString()}</span>
+              <div className="flex items-baseline gap-1.5 justify-end">
+                <span className="text-xs text-gray-500 font-medium">from</span>
+                <span className="text-xl font-bold text-gray-900">₹{minPrice.toLocaleString()}</span>
               </div>
-              <div className="text-[10px] text-[var(--foreground)] opacity-20 font-black uppercase tracking-widest mt-1">per night</div>
+              <div className="text-xs text-gray-500 font-medium mt-0.5">per night</div>
             </div>
           </div>
         </div>
@@ -77,3 +76,4 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
     </Link>
   );
 }
+

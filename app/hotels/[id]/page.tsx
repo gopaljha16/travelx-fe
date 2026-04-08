@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { getHotel, getHotelReviews, createBooking, Hotel, Review } from "@/lib/api";
+import { getHotel, getHotelReviews, createBooking, verifyPayment, Hotel, Review, Booking } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { MapPin, Wifi, Car, Waves, PawPrint, Users, BedDouble, Loader2, Star, Check, ArrowRight } from "lucide-react";
 
@@ -55,17 +55,83 @@ export default function HotelDetailPage() {
     load();
   }, [id, user, authLoading, router]);
 
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { router.push("/login"); return; }
     setBookingError(""); setBookingSuccess(""); setBookingLoading(true);
+    
     try {
-      await createBooking({ hotel_id: id, room_type_name: selectedRoom, check_in: checkIn, check_out: checkOut, num_rooms: numRooms, num_guests: numGuests });
-      setBookingSuccess("Stay Reserved.");
-      setShowBookingModal(true);
-    } catch (err: unknown) {
-      setBookingError(err instanceof Error ? err.message : "Reservation failed");
-    } finally {
+      const res = await loadRazorpay();
+      if (!res) {
+        setBookingError("Razorpay SDK failed to load. Are you online?");
+        setBookingLoading(false);
+        return;
+      }
+
+      const booking = await createBooking({ 
+        hotel_id: id, 
+        room_type_name: selectedRoom, 
+        check_in: checkIn, 
+        check_out: checkOut, 
+        num_rooms: numRooms, 
+        num_guests: numGuests 
+      });
+
+      if (!hotel) return;
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+        amount: booking.total_price * 100,
+        currency: "INR",
+        name: "GoTravel",
+        description: `Booking at ${hotel.name}`,
+        order_id: booking.razorpay_order_id,
+        handler: async function (response: any) {
+          try {
+            setBookingLoading(true);
+            await verifyPayment({
+              booking_id: booking.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setBookingSuccess("Stay Reserved & Payment Verified.");
+            setShowBookingModal(true);
+          } catch (err: any) {
+            setBookingError(err.message || "Payment verification failed");
+          } finally {
+            setBookingLoading(false);
+          }
+        },
+        prefill: {
+          name: user.name || "",
+          email: user.email || "",
+          contact: user.phone || "",
+        },
+        theme: {
+          color: "#ec6a2a",
+        },
+        modal: {
+            ondismiss: function() {
+                setBookingLoading(false);
+            }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (err: any) {
+      setBookingError(err.message || "Reservation failed");
       setBookingLoading(false);
     }
   };
@@ -75,236 +141,277 @@ export default function HotelDetailPage() {
   const totalPrice = selectedRoomData ? selectedRoomData.price_per_night * nights * numRooms : 0;
 
   if (pageLoading) return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors"><Navbar />
-      <div className="flex items-center justify-center min-h-[60vh]"><Loader2 size={40} className="animate-spin text-[#ec6a2a]" /></div>
+    <div className="min-h-screen bg-white"><Navbar />
+      <div className="flex items-center justify-center min-h-[60vh]"><Loader2 size={40} className="animate-spin text-gray-900" /></div>
     </div>
   );
 
   if (error || !hotel) return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors"><Navbar />
-      <div className="text-center py-40 text-[var(--foreground)] opacity-40 font-black uppercase tracking-widest">{error || "Collection not found"}</div>
+    <div className="min-h-screen bg-white"><Navbar />
+      <div className="text-center py-40 text-gray-500 font-medium">{error || "Hotel not found"}</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pb-40 transition-colors duration-500">
+    <div className="min-h-screen bg-white pb-20">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-6 pt-24">
-        {/* Editorial Gallery Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-24 h-[600px] animate-fade-in">
-          <div className="md:col-span-8 bg-[var(--muted)] rounded-[64px] border-4 border-[var(--card-border)] overflow-hidden relative group">
-            {hotel.images[activeImg] ? (
-              <img src={hotel.images[activeImg]} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-            ) : <div className="w-full h-full flex items-center justify-center text-[var(--foreground)] opacity-10 text-8xl font-black">🏨</div>}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-          </div>
-          <div className="md:col-span-4 flex flex-col gap-8">
-            {hotel.images.slice(1, 3).map((img, i) => (
-              <div key={i} className="flex-1 bg-[var(--muted)] rounded-[48px] border-4 border-[var(--card-border)] overflow-hidden cursor-pointer group" onClick={() => setActiveImg(i + 1)}>
-                <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0 opacity-60 group-hover:opacity-100" />
-              </div>
-            ))}
-            {hotel.images.length < 2 && <div className="flex-1 bg-[var(--card)] rounded-[48px] border-2 border-[var(--card-border)] flex items-center justify-center text-[var(--foreground)] opacity-5 text-6xl font-black">🏨</div>}
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* Header Section */}
+        <div className="mb-6">
+          <h1 className="text-[32px] font-semibold text-gray-900 mb-2">{hotel.name}</h1>
+          <div className="flex items-center gap-2 text-[15px] text-gray-800 font-medium font-sans">
+            <span className="flex items-center gap-1">
+              <Star size={16} className="text-black fill-black" />
+              {hotel.rating > 0 ? hotel.rating.toFixed(2) : "New"}
+            </span>
+            <span className="text-gray-400">·</span>
+            <span className="underline cursor-pointer">{reviews.length} reviews</span>
+            <span className="text-gray-400">·</span>
+            <span className="underline cursor-pointer flex items-center gap-1">
+              {hotel.city}, {hotel.address.split(',').pop()?.trim() || hotel.address}
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
-          {/* Main Details Overhaul */}
-          <div className="lg:col-span-2 space-y-24">
-            <div className="animate-fade-in">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-                <div>
-                  <p className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-6">Concierge Select</p>
-                  <h1 className="text-6xl md:text-8xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8]">{hotel.name}.</h1>
-                  <div className="flex items-center gap-4 mt-8">
-                    <div className="flex items-center gap-3 text-[var(--foreground)] opacity-40 text-[10px] font-black uppercase tracking-[0.2em] bg-[var(--muted)] px-6 py-2 rounded-full border border-[var(--card-border)]">
-                      <MapPin size={16} className="text-[#ec6a2a]" /> {hotel.address}, {hotel.city}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col items-start md:items-end gap-4">
-                  <div className="bg-[#ec6a2a] text-white font-black px-6 py-3 rounded-[32px] text-2xl shadow-2xl shadow-[#ec6a2a]/20">
-                    {hotel.rating > 0 ? hotel.rating.toFixed(1) : "New"}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[#ec6a2a]">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} size={18} fill={s <= Math.round(hotel.rating) ? "currentColor" : "none"} strokeWidth={2.5} />
-                    ))}
-                  </div>
+        {/* Gallery Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-[16px] overflow-hidden mb-12 h-[300px] sm:h-[400px] lg:h-[460px] group">
+          <div className="h-full relative cursor-pointer md:col-span-2 md:row-span-2 group-hover:opacity-80 hover:!opacity-100 transition-opacity duration-300" onClick={() => setActiveImg(0)}>
+            {hotel.images[0] ? (
+              <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
+            ) : <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400"><BedDouble size={48} /></div>}
+          </div>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="hidden md:block h-full relative overflow-hidden bg-gray-200 cursor-pointer group-hover:opacity-80 hover:!opacity-100 transition-opacity duration-300" onClick={() => setActiveImg(i)}>
+              {hotel.images[i] ? (
+                <img src={hotel.images[i]} alt="" className="w-full h-full object-cover" />
+              ) : null}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-20 relative">
+          {/* Main Content */}
+          <div className="space-y-8">
+            
+            {/* Hosted By/Overview */}
+            <section className="flex items-center justify-between py-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-[22px] font-semibold text-gray-900 mb-1">Room in a professional hotel hosted by {hotel.city && `${hotel.city} Stays`}</h2>
+                <div className="text-[15px] text-gray-600 font-normal">
+                  {hotel.room_types[0] ? `${hotel.room_types[0].capacity} guests` : "Multiple guests"} · {hotel.room_types.length} bedrooms · {hotel.room_types.length} beds
                 </div>
               </div>
-              {hotel.description && <p className="text-[var(--foreground)] opacity-60 text-xl font-medium leading-relaxed max-w-3xl">{hotel.description}</p>}
-            </div>
+              <div className="w-14 h-14 bg-gray-200 rounded-full border border-gray-300 overflow-hidden flex items-center justify-center text-xl text-gray-500 flex-shrink-0">
+                🏢
+              </div>
+            </section>
 
-            {/* Premium Amenities Overhaul */}
-            <div>
-              <h2 className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-12">The Experience.</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {/* Description */}
+            <section className="py-2">
+              {hotel.description ? (
+                <p className="text-[#222222] leading-[1.6] text-base whitespace-pre-wrap">{hotel.description}</p>
+              ) : (
+                <p className="text-gray-500 italic">No description available for this property.</p>
+              )}
+            </section>
+
+            <div className="border-b border-gray-200" />
+
+            {/* Amenities */}
+            <section className="py-2">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-6">What this place offers</h2>
+              <div className="grid grid-cols-2 gap-y-4 gap-x-4">
                 {hotel.amenities.map((a) => (
-                  <div key={a} className="flex flex-col items-start gap-4 p-8 bg-[var(--card)] rounded-[40px] border-2 border-[var(--card-border)] group hover:border-[#ec6a2a]/20 transition-all">
-                    <div className="w-12 h-12 rounded-2xl bg-[var(--muted)] flex items-center justify-center text-[#ec6a2a] group-hover:scale-110 transition-transform">
-                       {amenityIcons[a] || <Check size={18} />}
+                  <div key={a} className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       {amenityIcons[a] || <Check size={24} strokeWidth={1.5} />}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">{a}</span>
+                    <span className="text-base font-normal">{a}</span>
                   </div>
                 ))}
                 {hotel.is_pet_allowed && (
-                   <div className="flex flex-col items-start gap-4 p-8 bg-[#ec6a2a]/5 rounded-[40px] border-2 border-[#ec6a2a]/10 group hover:bg-[#ec6a2a]/10 transition-all">
-                    <div className="w-12 h-12 rounded-2xl bg-[#ec6a2a] flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                       <PawPrint size={18} />
+                   <div className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       <PawPrint size={24} strokeWidth={1.5} />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#ec6a2a]">Pet Friendly</span>
+                    <span className="text-base font-normal">Pets allowed</span>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Room Architecture redesign */}
-            <div>
-              <h2 className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-12">Availability.</h2>
-              <div className="space-y-6">
+            <div className="border-b border-gray-200" />
+
+            {/* Rooms */}
+            <section className="py-2">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-6">Available Options</h2>
+              <div className="space-y-4">
                 {hotel.room_types.map((room) => (
-                  <div key={room.name} className={`group bg-[var(--card)] rounded-[48px] border-4 p-8 md:p-10 cursor-pointer transition-all duration-500 overflow-hidden relative ${selectedRoom === room.name ? "border-[#ec6a2a] shadow-2xl shadow-[#ec6a2a]/10" : "border-[var(--card-border)] hover:border-[var(--card-border)] hover:bg-[var(--muted)]"}`}
+                  <div key={room.name} className={`rounded-[12px] border p-5 cursor-pointer transition-all ${selectedRoom === room.name ? "border-black bg-gray-50 ring-1 ring-black" : "border-gray-300 hover:border-gray-500 bg-white"}`}
                     onClick={() => setSelectedRoom(room.name)}>
-                    {selectedRoom === room.name && <div className="absolute top-0 right-0 w-32 h-32 bg-[#ec6a2a]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />}
-                    
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
-                        <div className="text-3xl font-black text-[var(--foreground)] uppercase tracking-tighter mb-4 flex items-center gap-4">
-                          <BedDouble size={24} className="text-[#ec6a2a]" /> {room.name}
-                        </div>
-                        <div className="flex items-center gap-6 text-[var(--foreground)] opacity-30 text-[10px] font-black uppercase tracking-widest">
-                          <span className="flex items-center gap-2"><Users size={14} /> Max {room.capacity}</span>
-                          <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#ec6a2a] rounded-full" /> {room.total_rooms} Active</span>
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                          {room.name}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 font-normal">
+                          <span className="flex items-center gap-1.5"><Users size={16} /> {room.capacity} guests max</span>
+                          <span className="flex items-center gap-1.5 text-green-700">
+                            ✓ {room.total_rooms} remaining
+                          </span>
                         </div>
                       </div>
-                      <div className="text-left md:text-right">
-                        <div className="text-4xl font-black text-[var(--foreground)] tracking-tighter">₹{room.price_per_night.toLocaleString()}</div>
-                        <div className="text-[9px] text-[var(--foreground)] opacity-20 font-black uppercase tracking-widest mt-1">Settlement / Night</div>
+                      <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0">
+                        <div className="text-lg font-semibold text-gray-900">₹{room.price_per_night.toLocaleString()}</div>
+                        <div className="text-[13px] text-gray-500 font-normal underline">night</div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Editorial Reviews Overhaul */}
-            <div>
-              <h2 className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-12">The Archives.</h2>
+            <div className="border-b border-gray-200" />
+
+            {/* Reviews */}
+            <section className="py-2">
+              <h2 className="text-[22px] font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                 <Star size={20} className="fill-black" />
+                 {hotel.rating > 0 ? hotel.rating.toFixed(2) : "New"} · {reviews.length} reviews
+              </h2>
               {reviews.length === 0 ? (
-                <div className="bg-[var(--card)] rounded-[48px] border-2 border-dashed border-[var(--card-border)] p-20 text-center">
-                   <p className="text-[var(--foreground)] opacity-20 font-black uppercase tracking-widest text-xs">No feedback records yet.</p>
-                </div>
+                <div className="text-gray-500 font-medium">No reviews yet. Be the first to review!</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   {reviews.map((r) => (
-                    <div key={r.id} className="bg-[var(--card)] border-2 border-[var(--card-border)] rounded-[48px] p-10 hover:border-[#ec6a2a]/20 transition-all group">
-                      <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-1 text-[#ec6a2a]">
-                           {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} fill={s <= r.rating ? "currentColor" : "none"} strokeWidth={s <= r.rating ? 0 : 2} />)}
-                        </div>
-                        <span className="text-[9px] text-[var(--foreground)] opacity-20 font-black uppercase tracking-widest">{new Date(r.created_at).toLocaleDateString()}</span>
+                    <div key={r.id} className="flex flex-col">
+                      <div className="flex items-center gap-4 mb-3">
+                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-semibold font-sans">
+                            {r.user_id ? "G" : "U"}
+                         </div>
+                         <div>
+                            <h4 className="text-base font-semibold text-[#222222]">Guest</h4>
+                            <p className="text-xs text-gray-500">{new Date(r.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</p>
+                         </div>
                       </div>
-                      {r.review_text && <p className="text-[var(--foreground)] opacity-60 font-medium italic leading-relaxed">"{r.review_text}"</p>}
+                      {r.review_text && <p className="text-[#222222] text-base leading-relaxed">"{r.review_text}"</p>}
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
           </div>
 
-          {/* Checkout Concierge Form redesign */}
-          <div className="lg:col-span-1">
-            <div className="bg-[var(--card)] rounded-[56px] border-2 border-[var(--card-border)] p-10 md:p-12 sticky top-24 shadow-2xl shadow-[#ec6a2a]/5 animate-slide-up">
-              <div className="text-[9px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-8">Reservation Desk</div>
-              <div className="text-5xl font-black text-[var(--foreground)] tracking-tighter mb-10 leading-none">
+          {/* Booking Widget */}
+          <div className="relative">
+            <div className="bg-white rounded-xl border border-[#dddddd] shadow-[0_6px_16px_rgba(0,0,0,0.12)] p-6 sticky top-28 w-full max-w-[370px] mx-auto lg:ml-auto">
+              <div className="text-[22px] font-semibold text-gray-900 mb-6 flex items-baseline gap-1">
                 ₹{selectedRoomData ? selectedRoomData.price_per_night.toLocaleString() : hotel.price_per_night.toLocaleString()}
-                <span className="text-lg font-black text-[var(--foreground)] opacity-20 uppercase tracking-widest"> / Night</span>
+                <span className="text-base font-normal text-gray-500"> night</span>
               </div>
 
               {bookingSuccess && (
-                <div className="bg-green-500/10 border-2 border-green-500/20 text-green-500 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest mb-10 animate-fade-in">{bookingSuccess}</div>
+                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm font-medium mb-6 flex items-center gap-2">
+                  <Check size={16} /> {bookingSuccess}
+                </div>
               )}
               {bookingError && (
-                <div className="bg-red-500/10 border-2 border-red-500/20 text-red-500 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest mb-10 animate-fade-in">{bookingError}</div>
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm font-medium mb-6">
+                  {bookingError}
+                </div>
               )}
 
-              <form onSubmit={handleBook} className="space-y-8">
-                <div>
-                  <label className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-widest block mb-4">Configuration</label>
-                  <select value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}
-                    className="w-full bg-[var(--muted)] border-2 border-transparent focus:bg-[var(--card)] focus:border-[#ec6a2a]/20 rounded-[28px] px-8 py-5 text-sm font-black uppercase tracking-widest text-[var(--foreground)] outline-none transition-all appearance-none cursor-pointer">
-                    {hotel.room_types.map((r) => <option key={r.name} value={r.name}>{r.name.toUpperCase()}</option>)}
-                  </select>
+              <form onSubmit={handleBook} className="space-y-4">
+                <div className="border border-[#b0b0b0] rounded-lg overflow-hidden flex flex-col relative focus-within:border-black focus-within:ring-1 focus-within:ring-black">
+                  <div className="grid grid-cols-2 text-left relative">
+                    <div className="p-3 border-r border-b border-[#b0b0b0] relative">
+                      <label className="block text-[10px] font-bold text-gray-900 uppercase tracking-wide">Check-in</label>
+                      <input 
+                        type="date" 
+                        value={checkIn} 
+                        onChange={(e) => setCheckIn(e.target.value)} 
+                        required 
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full mt-1 border-none bg-transparent p-0 text-sm focus:ring-0 text-[#222222] font-normal outline-none" 
+                      />
+                    </div>
+                    <div className="p-3 border-b border-[#b0b0b0]">
+                      <label className="block text-[10px] font-bold text-gray-900 uppercase tracking-wide">Checkout</label>
+                      <input 
+                        type="date" 
+                        value={checkOut} 
+                        onChange={(e) => setCheckOut(e.target.value)} 
+                        required 
+                        min={checkIn || new Date().toISOString().split("T")[0]}
+                        className="w-full mt-1 border-none bg-transparent p-0 text-sm focus:ring-0 text-[#222222] font-normal outline-none" 
+                      />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white">
+                     <label className="block text-[10px] font-bold text-gray-900 uppercase tracking-wide">Room Type</label>
+                     <select 
+                       value={selectedRoom} 
+                       onChange={(e) => setSelectedRoom(e.target.value)}
+                       className="w-full mt-1 border-none bg-transparent p-0 text-sm focus:ring-0 text-[#222222] font-normal outline-none cursor-pointer"
+                     >
+                        {hotel.room_types.map((r) => <option key={r.name} value={r.name}>{r.name} (Max {r.capacity})</option>)}
+                     </select>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <label className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-widest block mb-4">Check-in Protocol</label>
-                    <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} required min={new Date().toISOString().split("T")[0]}
-                      className="w-full bg-[var(--muted)] border-2 border-transparent focus:bg-[var(--card)] focus:border-[#ec6a2a]/20 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest text-[var(--foreground)] outline-none transition-all" />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-widest block mb-4">Departure Protocol</label>
-                    <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required min={checkIn || new Date().toISOString().split("T")[0]}
-                      className="w-full bg-[var(--muted)] border-2 border-transparent focus:bg-[var(--card)] focus:border-[#ec6a2a]/20 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest text-[var(--foreground)] outline-none transition-all" />
-                  </div>
+
+                <button type="submit" disabled={bookingLoading || !checkIn || !checkOut}
+                  className="w-full bg-[#FF6B35] hover:bg-[#e55a25] text-white py-[14px] rounded-lg font-semibold text-base transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-2">
+                  {bookingLoading ? <Loader2 size={20} className="animate-spin" /> : "Reserve"}
+                </button>
+                <div className="text-center font-normal mt-3 text-[#222222] text-sm">
+                  {!user ? "Login required to book" : "You won't be charged yet"}
                 </div>
 
                 {nights > 0 && (
-                  <div className="bg-[var(--muted)] rounded-[32px] p-8 border-2 border-dashed border-[var(--card-border)] animate-fade-in">
-                    <div className="flex justify-between items-baseline mb-4">
-                      <span className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-widest">Rate Calc</span>
-                      <span className="text-xl font-black text-[var(--foreground)] tracking-tighter">₹{selectedRoomData?.price_per_night.toLocaleString()} × {nights}</span>
+                  <div className="pt-4 pb-2 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#222222] underline text-base">₹{selectedRoomData?.price_per_night.toLocaleString()} × {nights} nights</span>
+                      <span className="text-[#222222] text-base">₹{totalPrice.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-baseline pt-4 border-t-2 border-[var(--card-border)]/50">
-                      <span className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-widest">Settlement</span>
-                      <span className="text-4xl font-black text-[#ec6a2a] tracking-tighter">₹{totalPrice.toLocaleString()}</span>
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-4">
+                      <span className="font-semibold text-[#222222] text-base">Total before taxes</span>
+                      <span className="font-semibold text-[#222222] text-base">₹{totalPrice.toLocaleString()}</span>
                     </div>
                   </div>
                 )}
-
-                <button type="submit" disabled={bookingLoading || !checkIn || !checkOut}
-                  className="w-full bg-[#ec6a2a] text-white py-6 rounded-[32px] font-black uppercase tracking-[0.3em] text-[10px] hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-[#ec6a2a]/30 disabled:opacity-30 disabled:hover:scale-100 flex items-center justify-center gap-3">
-                  {bookingLoading ? <Loader2 size={18} className="animate-spin" /> : "Initiate Stay"}
-                </button>
-                {!user && <p className="text-[10px] font-black text-center text-[var(--foreground)] opacity-20 uppercase tracking-[0.2em] mt-4">Concierge Sign-in Required</p>}
               </form>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Confirmation Modal redesign */}
+      {/* Confirmation Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-[var(--background)]/80 backdrop-blur-3xl flex items-center justify-center z-50 p-6 animate-fade-in">
-          <div className="bg-[var(--card)] rounded-[80px] p-16 md:p-24 w-full max-w-2xl shadow-2xl border-2 border-[var(--card-border)] animate-slide-up text-center relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-2 bg-[#ec6a2a]" />
-            <div className="w-24 h-24 bg-[#ec6a2a] rounded-full flex items-center justify-center mx-auto mb-12 shadow-2xl shadow-[#ec6a2a]/30">
-                <Check size={40} strokeWidth={4} className="text-white" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
+             
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check size={32} className="text-green-600" />
             </div>
             
-            <h3 className="text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase mb-6 leading-[0.8]">Reservation <br /> Locked.</h3>
-            <p className="text-[var(--foreground)] opacity-50 font-bold mb-16 leading-relaxed max-w-sm mx-auto">
-              Your editorial stay at <span className="text-[var(--foreground)] opacity-100">{hotel.name}</span> has been confirmed. You can access your itinerary in the archives.
-              <br />
-              <span className="text-[#ec6a2a] text-[10px] uppercase tracking-widest mt-4 block">
-                📧 Confirmation email sent to your registered address
-              </span>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Booking Confirmed!</h3>
+            <p className="text-gray-600 text-center mb-8">
+              Your stay at <span className="font-semibold text-gray-900">{hotel.name}</span> has been confirmed. A receipt has been sent to your email.
             </p>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => router.push("/bookings")}
-                className="w-full bg-[#ec6a2a] text-white py-6 rounded-[32px] font-black uppercase tracking-[0.3em] text-[10px] hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-[#ec6a2a]/30 flex items-center justify-center gap-3"
+                className="w-full bg-[#FF6B35] text-white py-3.5 rounded-lg font-semibold hover:bg-[#e55a25] transition-colors"
               >
-                View Itinerary <ArrowRight size={18} />
+                View My Bookings
               </button>
               <button
                 onClick={() => setShowBookingModal(false)}
-                className="w-full text-[var(--foreground)] opacity-30 font-black py-4 rounded-full uppercase tracking-widest text-[10px] hover:opacity-100 transition-opacity"
+                className="w-full bg-gray-100 text-[#222222] py-3.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
               >
-                Close Desk
+                Close
               </button>
             </div>
           </div>

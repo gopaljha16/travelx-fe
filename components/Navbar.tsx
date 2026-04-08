@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { User, LogOut, Hotel, Bus, Sun, Moon } from "lucide-react";
+import { User, LogOut, Menu, Moon, Sun, Globe } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function Navbar() {
@@ -16,67 +16,83 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--card-border)] sticky top-0 z-50 transition-colors duration-500">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-black text-2xl text-[var(--foreground)] tracking-tighter uppercase">
-          TravelX.
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        
+        {/* LOGO */}
+        <Link href="/" className="flex items-center gap-1.5 font-bold text-2xl text-[#FF6B35] tracking-tight">
+          <Globe size={28} className="text-[#FF6B35]" />
+          TravelX
         </Link>
 
+        {/* Center Links */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
+          <Link href="/" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
             Home
           </Link>
-          <Link href="/buses" className="flex items-center gap-2 text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
-            Bus
+          <Link href="/buses" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            Buses
           </Link>
-          <Link href="/hotels" className="flex items-center gap-2 text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
-            Hotel
+          <Link href="/hotels" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            Hotels
           </Link>
-          <Link href="/about" className="flex items-center gap-2 text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
+          <Link href="/about" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
             About
           </Link>
-          <Link href="/contact" className="flex items-center gap-2 text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
+          <Link href="/contact" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
             Contact
           </Link>
           {user && (
-            <Link href="/bookings" className="text-[var(--foreground)] hover:text-[#ec6a2a] transition-all text-xs font-bold uppercase tracking-widest">
+            <Link href="/bookings" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
               My Bookings
             </Link>
           )}
         </div>
 
-        <div className="flex items-center gap-6">
+        {/* Right Section */}
+        <div className="flex items-center gap-4">
           <button 
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-full border border-[var(--card-border)] flex items-center justify-center text-[var(--foreground)] hover:bg-[var(--card)] transition-all"
+            className="hidden sm:flex text-gray-500 hover:text-gray-900 font-medium text-[15px] p-2.5 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Toggle Theme"
           >
             {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
           
-          <div className="w-px h-6 bg-[var(--card-border)] hidden md:block" />
-          
           {user ? (
-            <div className="flex items-center gap-4">
-              <Link href="/profile" className="flex items-center gap-2 text-sm text-[var(--foreground)] hover:text-[#ec6a2a]">
-                <div className="w-10 h-10 rounded-full bg-[var(--card)] border border-[var(--card-border)] shadow-sm flex items-center justify-center overflow-hidden">
-                  <User size={18} className="text-[var(--foreground)]" />
+            <div className="relative group">
+              <button className="flex items-center gap-2 border border-gray-300 rounded-full py-1.5 px-2 hover:shadow-md transition-shadow bg-white cursor-pointer">
+                <Menu size={18} className="text-gray-600 ml-1.5" />
+                <div className="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center overflow-hidden">
+                  <User size={18} />
                 </div>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-[var(--foreground)] hover:text-red-500 transition-colors"
-              >
-                <LogOut size={20} />
               </button>
+              
+              <div className="absolute right-0 top-[110%] w-56 bg-white rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] border border-gray-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
+                <Link href="/profile" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-semibold">Profile</Link>
+                <Link href="/bookings" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">My trips</Link>
+                <hr className="my-2 border-gray-200" />
+                <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-normal">
+                   Log out
+                </button>
+              </div>
             </div>
           ) : (
-            <Link
-              href="/login"
-              className="bg-[var(--foreground)] text-[var(--background)] px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#ec6a2a] hover:text-white transition-all shadow-xl shadow-black/5"
-            >
-              Sign In
-            </Link>
+            <div className="relative group">
+              <button className="flex items-center gap-2 border border-gray-300 rounded-full py-1.5 px-2 hover:shadow-md transition-shadow bg-white cursor-pointer">
+                <Menu size={18} className="text-gray-600 ml-1.5" />
+                <div className="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center overflow-hidden">
+                  <User size={18} />
+                </div>
+              </button>
+              
+              <div className="absolute right-0 top-[110%] w-56 bg-white rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] border border-gray-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
+                <Link href="/login" className="block px-4 py-2.5 text-[14px] font-semibold text-gray-900 hover:bg-gray-50">Log in</Link>
+                <Link href="/login" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">Sign up</Link>
+                <hr className="my-2 border-gray-200" />
+                <Link href="/about" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">Help Center</Link>
+              </div>
+            </div>
           )}
         </div>
       </div>
