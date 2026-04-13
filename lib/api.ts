@@ -88,6 +88,10 @@ export const searchHotels = (params: {
   min_rating?: number;
   amenities?: string[];
   is_pet_allowed?: boolean;
+  is_early_check_in_available?: boolean;
+  is_late_check_in_available?: boolean;
+  is_late_check_out_available?: boolean;
+  is_pay_at_hotel_available?: boolean;
 }) => {
   const q = new URLSearchParams();
   if (params.q) q.set("q", params.q);
@@ -101,6 +105,10 @@ export const searchHotels = (params: {
   // amenities must be repeated: ?amenities=Wifi&amenities=Pool
   if (params.amenities?.length) params.amenities.forEach((a) => q.append("amenities", a));
   if (params.is_pet_allowed !== undefined) q.set("is_pet_allowed", String(params.is_pet_allowed));
+  if (params.is_early_check_in_available !== undefined) q.set("is_early_check_in_available", String(params.is_early_check_in_available));
+  if (params.is_late_check_in_available !== undefined) q.set("is_late_check_in_available", String(params.is_late_check_in_available));
+  if (params.is_late_check_out_available !== undefined) q.set("is_late_check_out_available", String(params.is_late_check_out_available));
+  if (params.is_pay_at_hotel_available !== undefined) q.set("is_pay_at_hotel_available", String(params.is_pay_at_hotel_available));
   return request<{ hotels: Hotel[]; total: number }>(`/hotels/search?${q}`);
 };
 
@@ -223,6 +231,7 @@ export interface RoomType {
   total_rooms: number;
   price_per_night: number;
   capacity: number;
+  images?: string[];
 }
 
 // Backend serialises with alias _id → id via populate_by_name
@@ -243,6 +252,10 @@ export interface Hotel {
   latitude?: number;
   longitude?: number;
   is_pet_allowed: boolean;
+  is_early_check_in_available: boolean;
+  is_late_check_in_available: boolean;
+  is_late_check_out_available: boolean;
+  is_pay_at_hotel_available: boolean;
 }
 
 export interface BookingCreate {

@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { getHotel, getHotelReviews, createBooking, verifyPayment, Hotel, Review, Booking } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { MapPin, Wifi, Car, Waves, PawPrint, Users, BedDouble, Loader2, Star, Check, ArrowRight } from "lucide-react";
+import { MapPin, Wifi, Car, Waves, PawPrint, Users, BedDouble, Loader2, Star, Check, ArrowRight, Clock, CreditCard, ImageIcon } from "lucide-react";
 
 const amenityIcons: Record<string, React.ReactNode> = {
   Wifi: <Wifi size={14} />,
@@ -238,6 +238,38 @@ export default function HotelDetailPage() {
                     <span className="text-base font-normal">Pets allowed</span>
                   </div>
                 )}
+                {hotel.is_early_check_in_available && (
+                   <div className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       <Clock size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-base font-normal">Early check-in available</span>
+                  </div>
+                )}
+                {hotel.is_late_check_in_available && (
+                   <div className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       <Clock size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-base font-normal">Late check-in available</span>
+                  </div>
+                )}
+                {hotel.is_late_check_out_available && (
+                   <div className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       <Clock size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-base font-normal">Late check-out available</span>
+                  </div>
+                )}
+                {hotel.is_pay_at_hotel_available && (
+                   <div className="flex items-center gap-4 text-[#222222]">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                       <CreditCard size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-base font-normal">Pay at hotel</span>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -248,18 +280,27 @@ export default function HotelDetailPage() {
               <h2 className="text-[22px] font-semibold text-gray-900 mb-6">Available Options</h2>
               <div className="space-y-4">
                 {hotel.room_types.map((room) => (
-                  <div key={room.name} className={`rounded-[12px] border p-5 cursor-pointer transition-all ${selectedRoom === room.name ? "border-black bg-gray-50 ring-1 ring-black" : "border-gray-300 hover:border-gray-500 bg-white"}`}
+                  <div key={room.name} className={`rounded-[12px] border p-4 cursor-pointer transition-all ${selectedRoom === room.name ? "border-black bg-gray-50 ring-1 ring-black" : "border-gray-300 hover:border-gray-500 bg-white"}`}
                     onClick={() => setSelectedRoom(room.name)}>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
-                          {room.name}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 font-normal">
-                          <span className="flex items-center gap-1.5"><Users size={16} /> {room.capacity} guests max</span>
-                          <span className="flex items-center gap-1.5 text-green-700">
-                            ✓ {room.total_rooms} remaining
-                          </span>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                          {room.images && room.images.length > 0 ? (
+                            <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <ImageIcon size={24} className="text-gray-400" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                            {room.name}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 font-normal">
+                            <span className="flex items-center gap-1.5"><Users size={16} /> {room.capacity} guests max</span>
+                            <span className="flex items-center gap-1.5 text-green-700">
+                              ✓ {room.total_rooms} remaining
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0">
