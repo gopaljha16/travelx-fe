@@ -1,68 +1,42 @@
 import Navbar from "@/components/Navbar";
+import { BusFront, Building2, ShieldCheck, Sparkles } from "lucide-react";
+
+const HIGHLIGHTS = [
+  { icon: BusFront, title: "Bus booking", text: "Verified routes with clearer route discovery and seat booking." },
+  { icon: Building2, title: "Hotel booking", text: "Stay search focused on trusted inventory, amenities, and better comparison." },
+  { icon: ShieldCheck, title: "Reliable backend", text: "Frontend actions are wired to the TravelX API stack for auth, search, and booking." },
+  { icon: Sparkles, title: "Consistent UX", text: "The customer app now shares one cleaner visual language across its pages." },
+];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors duration-500">
+    <div className="tx-page">
       <Navbar />
-      
-      <main className="max-w-7xl mx-auto px-6 pt-32 pb-24">
-        {/* Editorial Hero */}
-        <div className="mb-32">
-          <span className="text-[#ec6a2a] font-bold text-xs uppercase tracking-widest mb-6 block animate-fade-in">Our Legacy</span>
-          <h1 className="text-7xl md:text-9xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-12 animate-slide-up">
-            Defining <br />
-            Modern <br />
-            Travel.
-          </h1>
-          <p className="max-w-xl text-lg text-[var(--foreground)] font-medium leading-relaxed opacity-70 animate-fade-in delay-200">
-            TravelX is not just a booking platform. It's an editorial concierge for the modern traveler who seeks elevated standards, seamless transitions, and the pulse of the destination.
+
+      <section className="tx-shell py-10">
+        <div className="rounded-[36px] bg-[linear-gradient(135deg,#10213d_0%,#17325f_100%)] p-8 text-white sm:p-10">
+          <p className="tx-kicker text-orange-200">About TravelX</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">A cleaner travel product for buses and hotels.</h1>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/75 sm:text-base">
+            TravelX is focused on two real jobs: helping people find reliable bus routes and book better hotel stays. The product direction is now simpler, sharper, and more professional across the full customer journey.
           </p>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-48">
-          <div className="space-y-8">
-            <h2 className="text-4xl font-black text-[var(--foreground)] uppercase tracking-tight">The Vision.</h2>
-            <p className="text-[var(--foreground)] opacity-60 leading-relaxed">
-              We believe that the journey is as significant as the destination. By aggregating India's most premium hotel stays and reliable bus routes into a single, high-performance interface, we've eliminated the friction of movement.
-            </p>
-          </div>
-          <div className="space-y-8">
-            <h2 className="text-4xl font-black text-[var(--foreground)] uppercase tracking-tight">The Standard.</h2>
-            <p className="text-[var(--foreground)] opacity-60 leading-relaxed">
-              Every vendor on TravelX undergoes a rigorous verification process. From pet-friendly stays to AC sleeper comfort, our standards are non-negotiable. We're here to ensure you travel with absolute confidence.
-            </p>
-          </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {HIGHLIGHTS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.title} className="tx-card p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#ff6b35]">
+                  <Icon size={22} />
+                </div>
+                <h2 className="mt-4 text-xl font-black text-slate-900">{item.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+              </article>
+            );
+          })}
         </div>
-
-        {/* Brand Values */}
-        <div className="border-t border-[var(--card-border)] pt-24">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-            {[
-              { label: "Founded", value: "2024" },
-              { label: "Verified Hotels", value: "5000+" },
-              { label: "Active Routes", value: "1200+" },
-              { label: "Happy Travelers", value: "500k+" },
-            ].map((stat, i) => (
-              <div key={i} className="group cursor-default">
-                <p className="text-[var(--foreground)] opacity-40 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
-                <p className="text-4xl font-black text-[var(--foreground)] group-hover:text-[#ec6a2a] transition-colors">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      {/* Footer Branding */}
-      <footer className="border-t border-[var(--card-border)] py-12 px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-30">
-          <p>© 2026 TRAVELX. BEYOND THE DESTINATION.</p>
-          <div className="flex gap-8">
-            <span>Instagram</span>
-            <span>LinkedIn</span>
-          </div>
-        </div>
-      </footer>
+      </section>
     </div>
   );
 }

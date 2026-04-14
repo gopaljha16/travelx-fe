@@ -1,79 +1,95 @@
 "use client";
+
+import Image from "next/image";
 import Link from "next/link";
 import { Hotel } from "@/lib/api";
-import { MapPin, Wifi, Car, Waves, PawPrint, Star } from "lucide-react";
-
-const amenityIcons: Record<string, React.ReactNode> = {
-  Wifi: <Wifi size={14} />,
-  Pool: <Waves size={14} />,
-  Parking: <Car size={14} />,
-};
+import { BedDouble, MapPin, PawPrint, ShieldCheck, Star } from "lucide-react";
 
 export default function HotelCard({ hotel }: { hotel: Hotel }) {
-  const id = hotel.id || (hotel as any)._id;
   const minPrice = hotel.room_types.length
-    ? Math.min(...hotel.room_types.map((r) => r.price_per_night))
+    ? Math.min(...hotel.room_types.map((room) => room.price_per_night))
     : hotel.price_per_night;
 
-  return (
-    <Link href={`/hotels/${id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-gray-200 hover:border-[#FF6B35]/50 hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row overflow-hidden relative">
-        <div className="w-full md:w-64 h-56 md:h-auto flex-shrink-0 bg-gray-100 overflow-hidden relative">
-          {hotel.images && hotel.images[0] ? (
-            <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-300 text-5xl">🏨</div>
-          )}
-          {hotel.is_pet_allowed && (
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-sm">
-              <PawPrint size={14} className="text-[#FF6B35]" />
-            </div>
-          )}
-        </div>
+  const previewAmenities = hotel.amenities.slice(0, 4);
 
-        <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#FF6B35] transition-colors leading-tight mb-1">{hotel.name}</h3>
-                <div className="flex items-center gap-1.5 text-gray-500 text-sm font-medium">
-                  <MapPin size={14} className="text-[#FF6B35]" /> {hotel.city} — {hotel.address.split(",")[0]}
-                </div>
+  return (
+    <Link href={`/hotels/${hotel.id}`} className="block">
+      <article className="tx-card group overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="grid md:grid-cols-[280px_1fr]">
+          <div className="relative min-h-[220px] bg-slate-100">
+            {hotel.images[0] ? (
+              <Image
+                src={hotel.images[0]}
+                alt={hotel.name}
+                fill
+                unoptimized
+                className="object-cover transition duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-slate-300">
+                <BedDouble size={44} />
               </div>
-              <div className="bg-[#e8f5e9] text-[#2e7d32] text-sm font-bold px-2.5 py-1 rounded-md shadow-sm">
+            )}
+            <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+              <span className="tx-badge bg-white/95 text-slate-700 shadow-sm">
+                <Star size={14} className="fill-[#ff6b35] text-[#ff6b35]" />
                 {hotel.rating > 0 ? hotel.rating.toFixed(1) : "New"}
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mt-4">
-              {hotel.amenities.slice(0, 3).map((a) => (
-                <span key={a} className="flex items-center gap-1.5 text-xs font-medium bg-gray-50 text-gray-700 px-2.5 py-1.5 rounded-md border border-gray-100 whitespace-nowrap">
-                  {amenityIcons[a] || null} {a}
+              </span>
+              {hotel.is_verified && (
+                <span className="tx-badge bg-emerald-50 text-emerald-700">
+                  <ShieldCheck size={14} />
+                  Verified
                 </span>
-              ))}
-              {hotel.amenities.length > 3 && (
-                <span className="text-xs font-medium text-gray-500 self-center ml-1">+{hotel.amenities.length - 3} more</span>
               )}
             </div>
           </div>
-          
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-1 text-[#FF6B35]">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} size={14} fill={s <= Math.round(hotel.rating) ? "currentColor" : "none"} strokeWidth={s <= Math.round(hotel.rating) ? 0 : 2} />
-              ))}
-            </div>
-            <div className="text-right">
-              <div className="flex items-baseline gap-1.5 justify-end">
-                <span className="text-xs text-gray-500 font-medium">from</span>
-                <span className="text-xl font-bold text-gray-900">₹{minPrice.toLocaleString()}</span>
+
+          <div className="p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="tx-kicker">TravelX stay</div>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{hotel.name}</h3>
+                <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
+                  <MapPin size={16} className="text-[#ff6b35]" />
+                  {hotel.city}, {hotel.address.split(",")[0]}
+                </p>
               </div>
-              <div className="text-xs text-gray-500 font-medium mt-0.5">per night</div>
+              {hotel.is_pet_allowed && (
+                <span className="tx-badge bg-orange-50 text-orange-700">
+                  <PawPrint size={14} />
+                  Pet friendly
+                </span>
+              )}
+            </div>
+
+            <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-600">
+              {hotel.description || "Comfortable stays, verified amenities, and a smoother booking experience for your next trip."}
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {previewAmenities.map((amenity) => (
+                <span key={amenity} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                  {amenity}
+                </span>
+              ))}
+              {hotel.amenities.length > previewAmenities.length && (
+                <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                  +{hotel.amenities.length - previewAmenities.length} more
+                </span>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-end justify-between border-t border-slate-200 pt-5">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Starting from</p>
+                <p className="text-3xl font-black tracking-tight text-slate-900">INR {minPrice.toLocaleString()}</p>
+                <p className="text-sm font-semibold text-slate-500">per night</p>
+              </div>
+              <span className="text-sm font-bold text-[#ff6b35] transition group-hover:translate-x-1">View property</span>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
-

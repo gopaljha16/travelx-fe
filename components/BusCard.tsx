@@ -1,74 +1,77 @@
 "use client";
+
 import Link from "next/link";
 import { Bus } from "@/lib/api";
-import { Clock, MapPin, Users } from "lucide-react";
+import { ArrowRight, Calendar, Clock3, ShieldCheck, Users } from "lucide-react";
 
 export default function BusCard({ bus }: { bus: Bus }) {
-  const id = bus.id || (bus as any)._id;
-  const available = bus.total_seats - bus.booked_seats.length;
+  const availableSeats = bus.total_seats - bus.booked_seats.length;
+  const soldOut = availableSeats <= 0;
 
   return (
-    <Link href={`/buses/${id}`} className="block group">
-      <div className="bg-[var(--card)] rounded-[48px] border-2 border-[var(--card-border)] hover:border-[#ec6a2a]/30 hover:shadow-2xl hover:shadow-[#ec6a2a]/10 transition-all duration-500 p-8 overflow-hidden relative">
-        {/* Editorial Accents */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#ec6a2a]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-[#ec6a2a]/10 transition-colors" />
-        
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="flex-1 w-full">
-            <div className="flex items-center gap-12">
-              <div className="text-center min-w-[80px]">
-                <div className="text-4xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-none">{bus.departure_time}</div>
-                <div className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-widest mt-2">{bus.from_city}</div>
-              </div>
-              
-              <div className="flex-1 flex flex-col items-center px-4">
-                <div className="text-[9px] font-black text-[var(--foreground)] opacity-30 uppercase tracking-[0.2em] mb-4">
-                  {bus.bus_type}
-                </div>
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--card-border)] to-transparent relative">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--card)] px-4">
-                    <span className="text-xl group-hover:scale-125 transition-transform duration-500 inline-block grayscale group-hover:grayscale-0">🚌</span>
-                  </div>
-                </div>
-                <div className="text-[9px] text-[var(--foreground)] opacity-20 mt-4 font-black uppercase tracking-widest">Direct Trip</div>
-              </div>
-              
-              <div className="text-center min-w-[80px]">
-                <div className="text-4xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-none">{bus.arrival_time}</div>
-                <div className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-widest mt-2">{bus.to_city}</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-8 mt-10 pt-8 border-t border-[var(--card-border)]/50 text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">
-              <span className="flex items-center gap-3">
-                <Clock size={14} className="text-[#ec6a2a]" />
-                {new Date(bus.journey_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              </span>
-              <span className="flex items-center gap-3">
-                <Users size={14} className="text-[#ec6a2a]" />
-                {available} seats left
-              </span>
-              <span className="ml-auto text-xs opacity-100">{bus.name}</span>
-            </div>
+    <Link href={`/buses/${bus.id}`} className="block">
+      <article className="tx-card group p-6 transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="tx-kicker">TravelX route</div>
+            <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{bus.name}</h3>
           </div>
-          
-          <div className="w-full md:w-px h-px md:h-24 bg-[var(--card-border)]/50" />
-          
-          <div className="text-right min-w-[160px]">
-            <div className="text-[9px] text-[var(--foreground)] opacity-30 font-black uppercase tracking-widest mb-2">Starting From</div>
-            <div className="text-4xl font-black text-[var(--foreground)] tracking-tighter">₹{bus.price_per_seat.toLocaleString()}</div>
-            <div className="text-[10px] text-[var(--foreground)] opacity-20 font-black uppercase tracking-widest mt-1">per traveler</div>
-            
-            <div className={`inline-flex mt-6 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border-2 transition-all duration-500 ${
-              available > 10 ? "bg-green-500/10 border-green-500/20 text-green-500" : 
-              available > 0 ? "bg-orange-500/10 border-orange-500/20 text-orange-500" : 
-              "bg-red-500/10 border-red-500/20 text-red-500"
-            }`}>
-              {available > 0 ? `${available} Available` : "Sold Out"}
-            </div>
+          <span
+            className={`tx-badge ${
+              soldOut ? "bg-red-50 text-red-600" : availableSeats < 8 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            {soldOut ? "Sold out" : `${availableSeats} seats left`}
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-5 rounded-3xl bg-slate-50 p-5 md:grid-cols-[1fr_auto_1fr] md:items-center">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">From</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{bus.from_city}</p>
+            <p className="mt-1 text-sm font-semibold text-[#ff6b35]">{bus.departure_time}</p>
+          </div>
+          <div className="flex flex-col items-center text-slate-300">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{bus.bus_type}</span>
+            <div className="mt-2 h-px w-20 bg-slate-300" />
+            <ArrowRight size={16} className="mt-2 text-[#ff6b35]" />
+          </div>
+          <div className="text-left md:text-right">
+            <p className="text-sm font-semibold text-slate-500">To</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{bus.to_city}</p>
+            <p className="mt-1 text-sm font-semibold text-[#ff6b35]">{bus.arrival_time}</p>
           </div>
         </div>
-      </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500">
+          <span className="inline-flex items-center gap-2">
+            <Calendar size={16} className="text-[#2563eb]" />
+            {new Date(bus.journey_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Clock3 size={16} className="text-[#2563eb]" />
+            Direct service
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Users size={16} className="text-[#2563eb]" />
+            {bus.total_seats} total seats
+          </span>
+          {bus.is_verified && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+              <ShieldCheck size={16} />
+              Verified
+            </span>
+          )}
+        </div>
+
+        <div className="mt-6 flex items-end justify-between border-t border-slate-200 pt-5">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Starting from</p>
+            <p className="text-3xl font-black tracking-tight text-slate-900">INR {bus.price_per_seat.toLocaleString()}</p>
+          </div>
+          <span className="text-sm font-bold text-[#ff6b35] transition group-hover:translate-x-1">View trip</span>
+        </div>
+      </article>
     </Link>
   );
 }
