@@ -5,8 +5,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import HotelCard from "@/components/HotelCard";
 import { Hotel, searchHotels } from "@/lib/api";
-import { Loader2, MapPin, Search } from "lucide-react";
+import { Loader2, MapPin, Search, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import dynamic from "next/dynamic";
+
+// Dynamic import for the map component to avoid SSR issues
+const HotelMap = dynamic(() => import("@/components/HotelMap"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-slate-100 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
+});
 
 const AMENITIES = [
   "Swimming Pool",
@@ -44,6 +51,7 @@ export default function HotelsPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showMap, setShowMap] = useState(false);
 
   const [city, setCity] = useState(searchParams.get("city") || "");
   const [query, setQuery] = useState(searchParams.get("q") || "");
@@ -273,11 +281,17 @@ export default function HotelsPage() {
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-[320px] shrink-0">
             {/* Map Block */}
-            <div className="bg-slate-100 rounded-2xl h-[160px] relative overflow-hidden mb-6 shadow-sm border border-slate-200">
-               <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle at center, #0ea5e9 2px, transparent 2px)', backgroundSize: '16px 16px' }}></div>
-               <div className="absolute inset-0 flex items-center justify-center">
-                 <button className="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-full flex items-center gap-2 shadow-sm transition-transform hover:scale-105">
-                    <MapPin size={14} className="fill-white" />
+             <div className="bg-slate-100 rounded-2xl h-[160px] relative overflow-hidden mb-6 shadow-sm border border-slate-200 group cursor-pointer" onClick={() => setShowMap(true)}>
+               <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
+                  <HotelMap hotels={hotels.slice(0, 5)} mini />
+               </div>
+               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent z-10"></div>
+               <div className="absolute inset-0 flex items-center justify-center z-20">
+                 <button 
+                  type="button"
+                  className="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-5 py-3 rounded-full flex items-center gap-2 shadow-xl border-2 border-white/20 transition-transform group-hover:scale-105"
+                 >
+                    <MapPin size={16} className="fill-white" />
                     EXPLORE ON MAP
                  </button>
                </div>
@@ -474,6 +488,52 @@ export default function HotelsPage() {
           </div>
         </div>
       </main>
+
+      {/* Map Modal */}
+      {showMap && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="bg-white w-full h-full max-w-7xl rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-headline font-bold text-slate-900">Explore Stays on Map</h2>
+                <p className="text-sm text-slate-500 font-medium">Showing {sortedHotels.length} properties in this area</p>
+              </div>
+              <button 
+                onClick={() => setShowMap(false)}
+                className="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 bg-slate-50 relative p-4">
+              <HotelMap 
+                hotels={sortedHotels} 
+                onLocationSelect={(lt, ln) => {
+                  setLat(lt.toString());
+                  setLng(ln.toString());
+                  setCity("");
+                }}
+                selectedLocation={lat && lng ? [Number(lat), Number(lng)] : null}
+              />
+              
+              {lat && lng && !city && (
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000]">
+                  <button 
+                    onClick={() => {
+                      fetchHotels();
+                      setShowMap(false);
+                    }}
+                    className="bg-primary text-white font-bold px-8 py-3 rounded-xl shadow-2xl hover:bg-blue-700 transition-all flex items-center gap-2 animate-in slide-in-from-bottom-4"
+                  >
+                    <Search size={18} />
+                    SEARCH THIS AREA
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
