@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { user, logout, openLogin } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     await logout();
@@ -18,8 +19,18 @@ export default function Navbar() {
         <div className="flex items-center gap-12">
           <Link href="/" className="text-2xl font-extrabold tracking-tight text-blue-700 font-headline">TravelX</Link>
           <div className="hidden md:flex items-center gap-8 font-headline text-sm font-medium">
-            <Link className="text-blue-700 border-b-2 border-blue-600 pb-1" href="/hotels">Hotels</Link>
-            <Link className="text-slate-600 hover:text-blue-500 transition-colors" href="/buses">Bus</Link>
+            <Link 
+              className={`${pathname === '/hotels' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
+              href="/hotels"
+            >
+              Hotels
+            </Link>
+            <Link 
+              className={`${pathname === '/buses' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
+              href="/buses"
+            >
+              Bus
+            </Link>
           </div>
         </div>
         

@@ -1,57 +1,71 @@
 @import "tailwindcss";
 
 @theme {
-  --color-inverse-surface: #243142;
-  --color-secondary-fixed-dim: #bac8dc;
-  --color-inverse-primary: #a6c8ff;
-  --color-surface-bright: #f8f9ff;
-  --color-inverse-on-surface: #eaf1ff;
-  --color-surface-variant: #d6e4f9;
-  --color-on-error-container: #93000a;
-  --color-tertiary: #00628d;
-  --color-outline: #707785;
-  --color-surface-dim: #cddbf0;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-fixed: #c9e6ff;
-  --color-surface: #f8f9ff;
-  --color-surface-container-high: #dbe9ff;
-  --color-on-surface-variant: #404754;
-  --color-primary-fixed-dim: #a6c8ff;
-  --color-on-secondary-container: #566476;
-  --color-tertiary-container: #007cb1;
-  --color-primary-container: #0075d7;
-  --color-secondary-container: #d3e1f6;
-  --color-background: #f8f9ff;
-  --color-surface-tint: #005fb0;
-  --color-secondary: #525f71;
-  --color-primary: #005cab;
-  --color-error: #ba1a1a;
-  --color-outline-variant: #c0c7d6;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container: #e5eeff;
-  --color-on-secondary: #ffffff;
-  --color-on-secondary-fixed-variant: #3a4859;
-  --color-on-primary-fixed-variant: #004786;
-  --color-on-tertiary-fixed: #001e2f;
-  --color-on-background: #0f1c2c;
-  --color-on-error: #ffffff;
-  --color-on-tertiary-fixed-variant: #004c6e;
-  --color-on-surface: #0f1c2c;
-  --color-on-primary-fixed: #001c3b;
-  --color-tertiary-fixed-dim: #89ceff;
-  --color-on-tertiary-container: #fcfcff;
-  --color-secondary-fixed: #d6e4f9;
-  --color-surface-container-highest: #d6e4f9;
-  --color-primary-fixed: #d5e3ff;
-  --color-on-primary-container: #fefcff;
-  --color-error-container: #ffdad6;
-  --color-on-primary: #ffffff;
-  --color-surface-container-low: #eef4ff;
-  --color-on-secondary-fixed: #0f1c2c;
-
   --font-headline: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
+
+  /* TravelX Signature & Material 3 Colors */
+  --color-primary: #005cab; 
+  --color-primary-container: #0075d7;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fefcff;
+
+  --color-secondary: #525f71; 
+  --color-secondary-container: #d3e1f6;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #566476;
+
+  --color-tertiary: #00628d;
+  --color-tertiary-container: #007cb1;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #fcfcff;
+
+  --color-background: #f8f9ff;
+  --color-on-background: #0f1c2c;
+
+  --color-surface: #f8f9ff;
+  --color-on-surface: #0f1c2c;
+  --color-on-surface-variant: #404754;
+
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eef4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dbe9ff;
+  --color-surface-container-highest: #d6e4f9;
+
+  --color-surface-variant: #d6e4f9;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-dim: #cddbf0;
+  --color-surface-tint: #005fb0;
+
+  --color-outline: #707785;
+  --color-outline-variant: #c0c7d6;
+
+  --color-inverse-surface: #243142;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-inverse-primary: #a6c8ff;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* Fixed Colors */
+  --color-primary-fixed: #d5e3ff;
+  --color-primary-fixed-dim: #a6c8ff;
+  --color-on-primary-fixed: #001c3b;
+  --color-on-primary-fixed-variant: #004786;
+
+  --color-secondary-fixed: #d6e4f9;
+  --color-secondary-fixed-dim: #bac8dc;
+  --color-on-secondary-fixed: #0f1c2c;
+  --color-on-secondary-fixed-variant: #3a4859;
+
+  --color-tertiary-fixed: #c9e6ff;
+  --color-tertiary-fixed-dim: #89ceff;
+  --color-on-tertiary-fixed: #001e2f;
+  --color-on-tertiary-fixed-variant: #004c6e;
 }
 
 html, body {
