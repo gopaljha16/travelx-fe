@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { user, logout, openLogin } = useAuth();
+  const { wishlistCount } = useWishlist();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -35,10 +37,21 @@ export default function Navbar() {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="flex flex-col items-center justify-center p-1 px-4 hover:bg-slate-50 transition-colors text-slate-600 rounded-lg group">
-            <span className="material-symbols-outlined leading-none group-hover:text-pink-500 transition-colors" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>favorite</span>
-            <span className="text-[10px] font-bold mt-1">Wishlist</span>
-          </button>
+          <Link 
+            href={user ? "/profile/wishlist" : "#"} 
+            onClick={(e) => { if(!user) { e.preventDefault(); openLogin(); } }} 
+            className={`flex flex-col items-center justify-center p-1 px-4 transition-all rounded-lg group relative ${wishlistCount > 0 ? "text-blue-600 font-bold" : "text-slate-600 hover:bg-slate-50"}`}
+          >
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 right-2 bg-blue-600 text-white text-[9px] font-black h-4 w-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in-50">
+                {wishlistCount}
+              </span>
+            )}
+            <span className={`material-symbols-outlined leading-none transition-colors ${wishlistCount > 0 ? "text-blue-600" : "group-hover:text-pink-500 font-variation-light"}`} style={{ fontVariationSettings: wishlistCount > 0 ? "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>
+              favorite
+            </span>
+            <span className="text-[10px] uppercase font-bold mt-1 tracking-tight">Wishlist</span>
+          </Link>
 
           {user ? (
             <button onClick={handleLogout} className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-lg bg-gradient-to-r from-[#008cff] to-[#005cab] hover:shadow-lg transition-all cursor-pointer group group-active:scale-95">

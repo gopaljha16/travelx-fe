@@ -189,6 +189,23 @@ export const getMyReviews = (page = 1, limit = 10) =>
 
 export const deleteReview = (id: string) => request<void>(`/reviews/${id}`, { method: "DELETE" });
 
+// Wishlist
+export interface WishlistItem {
+  id: string;
+  item_id: string;
+  item_type: "hotel" | "bus";
+  created_at: string;
+  item_details: Hotel | Bus;
+}
+
+export const getWishlist = () => request<WishlistItem[]>("/wishlist/");
+
+export const toggleWishlist = (item_id: string, item_type: "hotel" | "bus") =>
+  request<{ message: string; is_wishlisted: boolean }>("/wishlist/toggle", {
+    method: "POST",
+    body: JSON.stringify({ item_id, item_type }),
+  });
+
 export interface UserProfile {
   id: string;
   role: string;

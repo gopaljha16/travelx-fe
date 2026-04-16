@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import LoginModal from "@/components/LoginModal";
 
 export const metadata: Metadata = {
@@ -21,8 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`font-body transition-colors duration-500`}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
-            <LoginModal />
+            <WishlistProvider>
+              {children}
+              <LoginModal />
+            </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
