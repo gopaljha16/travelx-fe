@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 export default function BusDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, openLogin } = useAuth();
 
   const [bus, setBus] = useState<Bus | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -19,14 +19,11 @@ export default function BusDetailPage() {
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
-    if (user) {
-      getBus(params.id)
-        .then(setBus)
-        .catch((err: unknown) => setError(err instanceof Error ? err.message : "Bus not found"))
-        .finally(() => setPageLoading(false));
-    }
-  }, [authLoading, params.id, router, user]);
+    getBus(params.id)
+      .then(setBus)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Bus not found"))
+      .finally(() => setPageLoading(false));
+  }, [params.id]);
 
   // Build seat rows: 2+2 for seater, 2 sides for sleeper
   const isSleeper = useMemo(() => bus?.bus_type?.toLowerCase().includes("sleeper") ?? false, [bus]);
@@ -48,6 +45,10 @@ export default function BusDetailPage() {
   };
 
   const goToBooking = () => {
+    if (!user) {
+      openLogin();
+      return;
+    }
     if (!bus || selectedSeats.length === 0) return;
     const p = new URLSearchParams({ seats: selectedSeats.join(","), price: String(bus.price_per_seat) });
     router.push(`/buses/${bus.id}/book?${p.toString()}`);
@@ -63,7 +64,7 @@ export default function BusDetailPage() {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
-  if (pageLoading || authLoading) return (
+  if (pageLoading) return (
     <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
       <div className="flex min-h-[80vh] items-center justify-center">
         <Loader2 size={36} className="animate-spin text-[#005cab]" />
@@ -202,15 +203,28 @@ export default function BusDetailPage() {
             </div>
           </div>
 
-          {/* Bus Image (if available) */}
-          {bus.images?.[0] && (
-            <div className="relative h-52 rounded-2xl overflow-hidden">
-              <Image src={bus.images[0]} alt={bus.name} fill unoptimized className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-5 left-6 text-white">
-                <p className="text-xs font-bold uppercase tracking-widest opacity-80">{bus.bus_type}</p>
-                <p className="text-xl font-headline font-bold">{bus.from_city} → {bus.to_city}</p>
+          {/* Bus Comfort Gallery */}
+          {bus.images && bus.images.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">chair</span>
+                <h2 className="font-headline text-xl font-bold text-[#0f1c2c]">Inside Your Bus</h2>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative h-64 rounded-2xl overflow-hidden border border-[#c0c7d6]/20 shadow-sm group">
+                  <Image src={bus.images[0]} alt="Bus Interior" fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <p className="absolute bottom-4 left-4 text-white text-xs font-bold uppercase tracking-widest">Premium Cabin</p>
+                </div>
+                {bus.images[1] && (
+                  <div className="relative h-64 rounded-2xl overflow-hidden border border-[#c0c7d6]/20 shadow-sm group">
+                    <Image src={bus.images[1]} alt="Bus Comfort" fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <p className="absolute bottom-4 left-4 text-white text-xs font-bold uppercase tracking-widest">Luxury Comfort</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium italic">* Images are for representation and represent the service class quality.</p>
             </div>
           )}
         </div>

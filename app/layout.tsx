@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import LoginModal from "@/components/LoginModal";
 
 export const metadata: Metadata = {
   title: "TravelX - Your Digital Concierge",
@@ -19,7 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`font-body transition-colors duration-500`}>
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <LoginModal />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -19,7 +19,7 @@ export default function BookingConfirmationPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
+    if (!user && !authLoading) { router.push("/"); return; }
     if (user) {
       getBooking(params.id)
         .then(setBooking)

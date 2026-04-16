@@ -23,7 +23,7 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
   };
 
   return (
-    <div className="flex bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5">
+    <Link href={`/hotels/${hotel.id}`} className="flex bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5 cursor-pointer group block">
       {/* Image Section */}
       <div className="relative w-[320px] shrink-0 h-[220px] rounded-xl overflow-hidden bg-slate-100">
         {hotel.images && hotel.images[0] ? (
@@ -32,7 +32,7 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
             alt={hotel.name}
             fill
             unoptimized
-            className="object-cover transition duration-500 hover:scale-105"
+            className="object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-slate-300">
@@ -94,13 +94,11 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
         <div className="text-right flex flex-col items-end w-full mt-auto">
           <p className="text-2xl font-black text-slate-900 font-headline leading-none mb-4">₹ {minPrice.toLocaleString()}</p>
 
-          <Link href={`/hotels/${hotel.id}`} className="w-full">
-            <button className="w-full bg-primary hover:bg-blue-700 text-white transition-colors py-2.5 rounded-xl font-bold text-sm shadow-md">
-              Select Room
-            </button>
-          </Link>
+          <span className="w-full bg-primary group-hover:bg-blue-700 text-white transition-colors py-2.5 rounded-xl font-bold text-sm shadow-md text-center">
+            Select Room
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

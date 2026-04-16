@@ -19,7 +19,7 @@ export default function BusConfirmationPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
+    if (!user && !authLoading) { router.push("/"); return; }
     if (user) {
       getBusBooking(params.id)
         .then(setBooking)

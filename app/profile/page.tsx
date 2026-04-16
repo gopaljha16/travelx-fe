@@ -13,7 +13,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/");
     }
   }, [loading, router, user]);
 
@@ -63,7 +63,7 @@ export default function ProfilePage() {
               <button
                 onClick={async () => {
                   await logout();
-                  router.push("/login");
+                  router.push("/");
                 }}
                 className="tx-button-secondary w-full border-red-200 text-red-600 hover:bg-red-50"
               >

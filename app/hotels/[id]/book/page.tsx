@@ -17,7 +17,15 @@ type RazorpayOptions = {
   key: string; amount: number; currency: string; name: string; description: string;
   order_id?: string; handler: (r: RazorpayResponse) => void | Promise<void>;
   prefill: { name: string; email: string; contact: string };
-  theme: { color: string }; modal: { ondismiss: () => void };
+  theme: { color: string }; 
+  modal: { ondismiss: () => void };
+  config?: {
+    display?: {
+      hide?: { method: string }[];
+      preferences?: { show_default_blocks: boolean };
+    }
+  };
+  method?: { [key: string]: boolean };
 };
 declare global { interface Window { Razorpay?: new (o: RazorpayOptions) => { open: () => void }; } }
 
@@ -56,7 +64,7 @@ export default function HotelBookPage() {
   const total = subtotal;
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
+    if (!user && !authLoading) { router.push("/"); return; }
     if (user) {
       setGuestName(user.name ?? "");
       setGuestEmail(user.email ?? "");
@@ -112,6 +120,31 @@ export default function HotelBookPage() {
         prefill: { name: guestName, email: guestEmail, contact: guestPhone },
         theme: { color: "#005cab" },
         modal: { ondismiss: () => setBookingLoading(false) },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI ID",
+                instruments: [
+                  {
+                    method: "upi",
+                    flows: ["vpa"]
+                  }
+                ]
+              }
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        }
       }).open();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Booking failed");

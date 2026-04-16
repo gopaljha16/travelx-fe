@@ -228,6 +228,10 @@ export interface Hotel {
   is_late_check_in_available: boolean;
   is_late_check_out_available: boolean;
   is_pay_at_hotel_available: boolean;
+  review_count: number;
+  property_type: string;
+  check_in_time: string;
+  check_out_time: string;
 }
 
 export interface BookingCreate {

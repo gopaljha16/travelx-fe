@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { searchHotels, searchBuses, Hotel, Bus } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
 
 export default function HomePage() {
   const router = useRouter();
@@ -13,10 +14,13 @@ export default function HomePage() {
   
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
+  const [isNearby, setIsNearby] = useState(true);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
   
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [locationResolved, setLocationResolved] = useState(false);
 
   // Search Form State
   const [activeTab, setActiveTab] = useState<"hotels" | "buses">("hotels");
@@ -48,14 +52,16 @@ export default function HomePage() {
             setSearchQuery(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
           }
           setIsLocating(false);
+          setLocationResolved(true);
         },
         (error) => {
           console.error("Error getting location", error);
           setIsLocating(false);
+          setLocationResolved(true);
         }
       );
     } else {
-      alert("Geolocation is not supported by this browser.");
+      setLocationResolved(true);
     }
   };
 
@@ -65,20 +71,37 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (!locationResolved) return; // Wait for geolocation to resolve first
+    
     const fetchHotels = async () => {
+      setHotelsLoading(true);
       try {
-        const { hotels } = await searchHotels({ 
-          lat: lat || undefined, 
-          lng: lng || undefined, 
-          radius_km: lat && lng ? parseInt(radius) || 50 : undefined 
-        });
-        setHotels(hotels.slice(0, 3));
+        // Try geo-filtered search first if we have location
+        if (lat && lng) {
+          const { hotels: nearbyHotels } = await searchHotels({ 
+            lat, lng, 
+            radius_km: parseInt(radius) || 50 
+          });
+          if (nearbyHotels.length > 0) {
+            setHotels(nearbyHotels.slice(0, 3));
+            setIsNearby(true);
+            setHotelsLoading(false);
+            return;
+          }
+        }
+        // Fallback: fetch top-rated hotels nationally (no geo filter)
+        const { hotels: allHotels } = await searchHotels({});
+        const sorted = [...allHotels].sort((a, b) => b.rating - a.rating);
+        setHotels(sorted.slice(0, 3));
+        setIsNearby(false);
       } catch (err) {
         console.error("Failed to fetch hotels:", err);
+      } finally {
+        setHotelsLoading(false);
       }
     };
     fetchHotels();
-  }, [lat, lng, radius]);
+  }, [lat, lng, radius, locationResolved]);
 
   useEffect(() => {
     const fetchBuses = async () => {
@@ -115,34 +138,7 @@ export default function HomePage() {
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container min-h-screen">
       {/* TopNavBar */}
-      <header className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-sm">
-        <nav className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-12">
-            <span className="text-2xl font-extrabold tracking-tight text-blue-700 font-headline">TravelX</span>
-            <div className="hidden md:flex items-center gap-8 font-headline text-sm font-medium">
-              <Link className="text-blue-700 border-b-2 border-blue-600 pb-1" href="/hotels">Hotels</Link>
-              <Link className="text-slate-600 hover:text-blue-500 transition-colors" href="/buses">Bus</Link>
-              <Link className="text-slate-600 hover:text-blue-500 transition-colors" href="#">Flights</Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-slate-100/50 transition-colors text-slate-600">
-              <span className="material-symbols-outlined leading-none" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>notifications</span>
-            </button>
-            {user ? (
-              <button onClick={logout} className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container transition-all">
-                <span className="material-symbols-outlined text-primary leading-none" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>account_circle</span>
-                <span className="text-sm font-medium text-on-surface">Logout</span>
-              </button>
-            ) : (
-              <Link href="/login" className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container transition-all">
-                <span className="material-symbols-outlined text-primary leading-none" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>account_circle</span>
-                <span className="text-sm font-medium text-on-surface">Login</span>
-              </Link>
-            )}
-          </div>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="pt-20 pb-24 md:pb-0">
         {/* Hero Section */}
@@ -264,23 +260,31 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-6 py-20">
           <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="font-headline text-3xl font-extrabold text-on-surface">Hotels Near You</h2>
-              <p className="text-on-surface-variant mt-2">Discover curated stays within your immediate radius.</p>
+              <h2 className="font-headline text-3xl font-extrabold text-on-surface">
+                {hotelsLoading ? "Discovering Hotels..." : (isNearby ? "Hotels Near You" : "Popular Hotels")}
+              </h2>
+              <p className="text-on-surface-variant mt-2">
+                {hotelsLoading ? "Locating the best stays..." : (isNearby ? "Discover curated stays within your immediate radius." : "Discover the most popular stays across the country.")}
+              </p>
             </div>
             <Link href="/hotels" className="flex items-center gap-2 text-primary font-bold group">
               View All <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </Link>
           </div>
 
-          {hotels.length === 0 ? (
+          {hotelsLoading || !locationResolved ? (
+             <div className="flex justify-center py-20 bg-surface-container-lowest rounded-3xl border border-outline-variant/10">
+               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+             </div>
+          ) : hotels.length === 0 ? (
              <div className="text-center py-20 bg-surface-container-lowest rounded-3xl border border-outline-variant/10 text-on-surface-variant">
-               No nearby hotels found. Try a different area or click "Near Me".
+               No hotels found.
              </div>
           ) : (
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                {/* Large Featured Card */}
                {hotels[0] && (
-                 <div className="md:col-span-2 group relative overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-sm border border-outline-variant/10">
+                 <Link href={`/hotels/${hotels[0].id}`} className="md:col-span-2 group relative overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-sm border border-outline-variant/10 block cursor-pointer">
                    <div className="aspect-[16/10] overflow-hidden">
                      <img alt={hotels[0].name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src={hotels[0].images?.[0] || "https://images.unsplash.com/photo-1542314831-c6a4d14b?w=800&q=80"} />
                    </div>
@@ -290,7 +294,7 @@ export default function HomePage() {
                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> {hotels[0].rating}
                          </span>
-                         <span className="bg-tertiary/10 text-tertiary px-3 py-1 rounded-full text-xs font-bold">Near You</span>
+                         <span className="bg-tertiary/10 text-tertiary px-3 py-1 rounded-full text-xs font-bold">{isNearby ? "Near You" : "Top Rated"}</span>
                        </div>
                        <h3 className="font-headline text-2xl font-bold text-on-surface">{hotels[0].name}</h3>
                        <p className="text-on-surface-variant flex items-center gap-1 mt-1">
@@ -301,16 +305,16 @@ export default function HomePage() {
                        <div>
                          <div className="text-primary font-headline text-3xl font-extrabold">₹{hotels[0].price_per_night}<span className="text-sm font-normal text-on-surface-variant">/night</span></div>
                        </div>
-                       <Link href={`/hotels/${hotels[0].id}`} className="mt-4 px-6 py-2.5 bg-on-surface text-surface rounded-xl font-bold text-sm hover:bg-primary transition-colors">Book Now</Link>
+                       <span className="mt-4 px-6 py-2.5 bg-on-surface text-surface rounded-xl font-bold text-sm hover:bg-primary transition-colors">Book Now</span>
                      </div>
                    </div>
-                 </div>
+                 </Link>
                )}
 
                {/* Side Column Cards */}
                <div className="flex flex-col gap-8">
                  {hotels.slice(1, 3).map((hotel, index) => (
-                   <div key={hotel.id} className="group overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-sm border border-outline-variant/10 h-full flex flex-col">
+                   <Link href={`/hotels/${hotel.id}`} key={hotel.id} className="group overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-sm border border-outline-variant/10 h-full flex flex-col block cursor-pointer">
                      <div className="aspect-video overflow-hidden shrink-0">
                        <img alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src={hotel.images?.[0] || "https://images.unsplash.com/photo-1542314831?w=400&q=80"} />
                      </div>
@@ -322,10 +326,10 @@ export default function HomePage() {
                        <h3 className="font-headline text-lg font-bold text-on-surface">{hotel.name}</h3>
                        <div className="flex justify-between items-end mt-auto pt-4">
                          <div className="text-primary font-headline text-xl font-extrabold">₹{hotel.price_per_night}<span className="text-xs font-normal text-on-surface-variant">/night</span></div>
-                         <Link href={`/hotels/${hotel.id}`} className="text-sm font-bold text-primary hover:underline">View</Link>
+                         <span className="text-sm font-bold text-primary hover:underline">View →</span>
                        </div>
                      </div>
-                   </div>
+                   </Link>
                  ))}
                </div>
              </div>

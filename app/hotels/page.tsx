@@ -8,7 +8,35 @@ import { Hotel, searchHotels } from "@/lib/api";
 import { Loader2, MapPin, Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
-const AMENITIES = ["Swimming Pool", "Free WiFi", "Breakfast Included", "Spa", "Parking"];
+const AMENITIES = [
+  "Swimming Pool",
+  "Free WiFi",
+  "Breakfast Included",
+  "Spa",
+  "Parking",
+  "Gym",
+  "Restaurant",
+  "Bar",
+  "Room Service",
+  "Air Conditioning",
+  "Laundry",
+  "Airport Shuttle",
+];
+
+const PRICE_RANGES = [
+  { label: "₹ 0 – ₹ 2,500", min: 0, max: 2500 },
+  { label: "₹ 2,500 – ₹ 5,500", min: 2500, max: 5500 },
+  { label: "₹ 5,500 – ₹ 10,000", min: 5500, max: 10000 },
+  { label: "₹ 10,000+", min: 10000, max: undefined as number | undefined },
+];
+
+const STAR_OPTIONS = [3, 3.5, 4, 4.5, 5];
+
+const GUEST_RATING_OPTIONS = [
+  { label: "4.2+ Very Good", value: 4.2 },
+  { label: "4.5+ Excellent", value: 4.5 },
+  { label: "4.7+ Exceptional", value: 4.7 },
+];
 
 export default function HotelsPage() {
   const router = useRouter();
@@ -36,6 +64,13 @@ export default function HotelsPage() {
   const [minRating, setMinRating] = useState<number | undefined>();
   const [selectedPropertyType, setSelectedPropertyType] = useState<string>("Hotels");
 
+  // New MakeMyTrip-style filters
+  const [isPetAllowed, setIsPetAllowed] = useState(false);
+  const [isEarlyCheckIn, setIsEarlyCheckIn] = useState(false);
+  const [isLateCheckOut, setIsLateCheckOut] = useState(false);
+  const [isPayAtHotel, setIsPayAtHotel] = useState(false);
+  const [guestRating, setGuestRating] = useState<number | undefined>();
+
   const fetchHotels = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -50,6 +85,10 @@ export default function HotelsPage() {
         max_price: maxPrice,
         min_rating: minRating,
         amenities: selectedAmenities.length ? selectedAmenities : undefined,
+        is_pet_allowed: isPetAllowed ? true : undefined,
+        is_early_check_in_available: isEarlyCheckIn ? true : undefined,
+        is_late_check_out_available: isLateCheckOut ? true : undefined,
+        is_pay_at_hotel_available: isPayAtHotel ? true : undefined,
       });
       setHotels(response.hotels);
     } catch (err: unknown) {
@@ -57,34 +96,40 @@ export default function HotelsPage() {
     } finally {
       setLoading(false);
     }
-  }, [city, query, lat, lng, radiusKm, minPrice, maxPrice, minRating, selectedAmenities]);
+  }, [city, query, lat, lng, radiusKm, minPrice, maxPrice, minRating, selectedAmenities, isPetAllowed, isEarlyCheckIn, isLateCheckOut, isPayAtHotel]);
 
   useEffect(() => {
     fetchHotels();
   }, [fetchHotels]);
 
-  useEffect(() => {
-    // Automatically trigger location reading if no location params are present
-    if (!searchParams.get("city") && !searchParams.get("lat") && !searchParams.get("lng")) {
-      if (typeof navigator !== "undefined" && navigator.geolocation) {
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setLat(position.coords.latitude.toString());
-            setLng(position.coords.longitude.toString());
-            setIsLocating(false);
-          },
-          (err) => {
-            console.error("Location error:", err);
-            setIsLocating(false);
-          }
-        );
-      }
+  const requestLocation = () => {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLat(position.coords.latitude.toString());
+          setLng(position.coords.longitude.toString());
+          setCity(""); // Clear city so lat/lng takes precedence
+          setIsLocating(false);
+        },
+        (err) => {
+          console.error("Location error:", err);
+          setIsLocating(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
     }
-  }, [searchParams]);
+  };
 
   const sortedHotels = useMemo(() => {
-    const next = [...hotels];
+    let next = [...hotels];
+
+    // Client-side guest rating filter (based on hotel.rating since we treat it as guest review rating)
+    if (guestRating) {
+      next = next.filter((h) => h.rating >= guestRating);
+    }
+
     if (sortBy === "price_low") {
       next.sort((a, b) => a.price_per_night - b.price_per_night);
     } else if (sortBy === "price_high") {
@@ -93,7 +138,7 @@ export default function HotelsPage() {
       next.sort((a, b) => b.rating - a.rating);
     }
     return next;
-  }, [hotels, sortBy]);
+  }, [hotels, sortBy, guestRating]);
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((current) =>
@@ -120,6 +165,11 @@ export default function HotelsPage() {
     setMaxPrice(undefined);
     setMinRating(undefined);
     setSelectedPropertyType("Hotels");
+    setIsPetAllowed(false);
+    setIsEarlyCheckIn(false);
+    setIsLateCheckOut(false);
+    setIsPayAtHotel(false);
+    setGuestRating(undefined);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -136,6 +186,17 @@ export default function HotelsPage() {
 
   const displayLocation = city || (lat && lng ? "Current Location" : "");
 
+  const activeFilterCount = [
+    minPrice !== undefined,
+    minRating !== undefined,
+    selectedAmenities.length > 0,
+    isPetAllowed,
+    isEarlyCheckIn,
+    isLateCheckOut,
+    isPayAtHotel,
+    guestRating !== undefined,
+  ].filter(Boolean).length;
+
   return (
     <div className="bg-[#f8f9fc] min-h-screen text-slate-800 font-body">
       <Navbar />
@@ -149,21 +210,27 @@ export default function HotelsPage() {
             </span>
             <div className="flex flex-col w-full relative">
               <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Location</label>
-              <input 
-                type="text" 
-                value={city} 
-                onChange={(e) => { 
-                  setCity(e.target.value); 
-                  if (lat || lng) { setLat(""); setLng(""); }
-                }} 
-                placeholder={isLocating ? "Detecting location..." : (lat && lng ? "Current Location" : "Where to?")} 
-                className={`bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full ${isLocating ? 'text-primary animate-pulse' : 'text-slate-900'}`}
-              />
-              { lat && !city && (
-                <button type="button" onClick={() => { setLat(""); setLng(""); setCity(""); }} className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors">
-                  <span className="material-symbols-outlined text-[16px]">close</span>
-                </button>
-              )}
+              <div className="flex items-center">
+                <input 
+                  type="text" 
+                  value={city} 
+                  onChange={(e) => { 
+                    setCity(e.target.value); 
+                    if (lat || lng) { setLat(""); setLng(""); }
+                  }} 
+                  placeholder={isLocating ? "Detecting location..." : (lat && lng ? "Current Location" : "Where to?")} 
+                  className={`bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full ${isLocating ? 'text-primary animate-pulse' : 'text-slate-900'}`}
+                />
+                { lat && !city ? (
+                  <button type="button" onClick={() => { setLat(""); setLng(""); setCity(""); }} className="ml-2 text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Clear Location">
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                ) : (
+                  <button type="button" onClick={requestLocation} className="ml-2 text-primary hover:text-blue-700 transition-colors shrink-0" title="Use My Location">
+                    <span className="material-symbols-outlined text-[18px]">my_location</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -218,44 +285,120 @@ export default function HotelsPage() {
 
             <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-headline font-bold text-slate-900 uppercase tracking-widest text-sm">Filters</h3>
+                <h3 className="font-headline font-bold text-slate-900 uppercase tracking-widest text-sm flex items-center gap-2">
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{activeFilterCount}</span>
+                  )}
+                </h3>
                 <button onClick={clearFilters} className="text-xs font-bold text-primary hover:underline">RESET ALL</button>
               </div>
+
+              {/* Radius Filter (Visible only when 'Near Me' is active) */}
+              {lat && lng && (
+                <div className="mb-6 border-b border-slate-100 pb-6">
+                  <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Distance from me <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+                  <div className="space-y-3">
+                    {["5", "10", "20", "50"].map((r) => (
+                      <label key={r} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setRadiusKm(r)}>
+                        <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${radiusKm === r ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
+                        <span className="text-sm font-medium text-slate-600 flex-1">Within {r} km</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Price Per Night */}
               <div className="mb-6 border-b border-slate-100 pb-6">
                 <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Price Per Night <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
                 
                 <div className="space-y-3 mt-4">
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(0, 2500)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 0 && maxPrice === 2500 ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 0 && maxPrice === 2500 && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 0 - ₹ 2500</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(2500, 5500)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 2500 && maxPrice === 5500 ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 2500 && maxPrice === 5500 && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 2500 - ₹ 5500</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(5500, undefined)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 5500 && maxPrice === undefined ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 5500 && maxPrice === undefined && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 5500+</span>
-                  </label>
+                  {PRICE_RANGES.map((range) => (
+                    <label key={range.label} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(range.min, range.max)}>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === range.min && maxPrice === range.max ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
+                        {minPrice === range.min && maxPrice === range.max && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
+                      </div>
+                      <span className="text-sm font-medium text-slate-600 flex-1">{range.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
               {/* Star Rating */}
               <div className="mb-6 border-b border-slate-100 pb-6">
                 <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Star Rating <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="flex gap-2">
-                  <button onClick={() => setMinRating(minRating === 3 ? undefined : 3)} className={`flex-1 py-2 border rounded-lg text-sm font-bold shadow-sm transition-colors ${minRating === 3 ? 'bg-primary border-primary text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>3★</button>
-                  <button onClick={() => setMinRating(minRating === 4 ? undefined : 4)} className={`flex-1 py-2 border rounded-lg text-sm font-bold shadow-sm transition-colors ${minRating === 4 ? 'bg-primary border-primary text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>4★</button>
-                  <button onClick={() => setMinRating(minRating === 5 ? undefined : 5)} className={`flex-1 py-2 border rounded-lg text-sm font-bold shadow-sm transition-colors ${minRating === 5 ? 'bg-primary border-primary text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>5★</button>
+                <div className="flex flex-wrap gap-2">
+                  {STAR_OPTIONS.map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setMinRating(minRating === star ? undefined : star)}
+                      className={`py-2 px-4 border rounded-lg text-sm font-bold shadow-sm transition-colors ${minRating === star ? 'bg-primary border-primary text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      {star}★
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              {/* Guest Rating */}
+              <div className="mb-6 border-b border-slate-100 pb-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Guest Rating <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+                <div className="space-y-3">
+                  {GUEST_RATING_OPTIONS.map((opt) => (
+                    <label key={opt.value} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setGuestRating(guestRating === opt.value ? undefined : opt.value)}>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${guestRating === opt.value ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
+                        {guestRating === opt.value && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
+                      </div>
+                      <span className="text-sm font-medium text-slate-600 flex-1">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pet Friendly */}
+              <div className="mb-6 border-b border-slate-100 pb-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Pet Friendly <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+                <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsPetAllowed(!isPetAllowed)}>
+                  <div className={`w-11 h-6 rounded-full flex items-center transition-colors px-0.5 ${isPetAllowed ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
+                    <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600 flex-1">
+                    {isPetAllowed ? "Only pet-friendly hotels" : "Show all hotels"}
+                  </span>
+                  <span className="material-symbols-outlined text-slate-400 text-[18px]">pets</span>
+                </label>
+              </div>
+
+              {/* Check-in / Check-out Flexibility */}
+              <div className="mb-6 border-b border-slate-100 pb-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Flexibility <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+                <div className="space-y-3">
+                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsEarlyCheckIn(!isEarlyCheckIn)}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isEarlyCheckIn ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
+                      {isEarlyCheckIn && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 flex-1">Early Check-in Available</span>
+                  </label>
+                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsLateCheckOut(!isLateCheckOut)}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isLateCheckOut ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
+                      {isLateCheckOut && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 flex-1">Late Check-out Available</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Payment Options */}
+              <div className="mb-6 border-b border-slate-100 pb-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Payment <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+                <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsPayAtHotel(!isPayAtHotel)}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isPayAtHotel ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
+                    {isPayAtHotel && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
+                  </div>
+                  <span className="text-sm font-medium text-slate-600 flex-1">Pay at Hotel</span>
+                  <span className="material-symbols-outlined text-slate-400 text-[18px]">payments</span>
+                </label>
               </div>
 
               {/* Amenities */}
@@ -278,17 +421,13 @@ export default function HotelsPage() {
               <div>
                 <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Property Type <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
                 <div className="space-y-3">
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setSelectedPropertyType("Hotels")}>
-                    <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${selectedPropertyType === "Hotels" ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">Hotels</span>
-                    <span className="text-xs text-slate-400">({hotels.length})</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setSelectedPropertyType("Resorts")}>
-                    <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${selectedPropertyType === "Resorts" ? 'border-primary' : 'border-slate-200 group-hover:border-primary'}`}></div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">Resorts</span>
-                     {/* Just keeping aesthetic count for visual demo on non-hotel properties */}
-                    <span className="text-xs text-slate-400">(0)</span>
-                  </label>
+                  {["Hotels", "Resorts", "Apartments"].map((type) => (
+                    <label key={type} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setSelectedPropertyType(type)}>
+                      <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${selectedPropertyType === type ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
+                      <span className="text-sm font-medium text-slate-600 flex-1">{type}</span>
+                      {type === "Hotels" && <span className="text-xs text-slate-400">({hotels.length})</span>}
+                    </label>
+                  ))}
                 </div>
               </div>
 

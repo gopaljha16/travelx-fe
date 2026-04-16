@@ -28,7 +28,7 @@ function ratingLabel(r: number) {
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, openLogin } = useAuth();
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -41,19 +41,16 @@ export default function HotelDetailPage() {
   const [numGuests, setNumGuests] = useState(2);
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
-    if (user) {
-      Promise.all([
-        getHotel(params.id),
-        getHotelReviews(params.id).catch(() => ({ reviews: [], total: 0, page: 1, limit: 10, average_rating: 0 })),
-      ]).then(([h, rev]) => {
-        setHotel(h);
-        setReviews(rev.reviews);
-        if (h.room_types[0]) setSelectedRoom(h.room_types[0].name);
-      }).catch(e => setError(e instanceof Error ? e.message : "Hotel not found"))
-        .finally(() => setLoading(false));
-    }
-  }, [authLoading, params.id, router, user]);
+    Promise.all([
+      getHotel(params.id),
+      getHotelReviews(params.id).catch(() => ({ reviews: [], total: 0, page: 1, limit: 10, average_rating: 0 })),
+    ]).then(([h, rev]) => {
+      setHotel(h);
+      setReviews(rev.reviews);
+      if (h.room_types[0]) setSelectedRoom(h.room_types[0].name);
+    }).catch(e => setError(e instanceof Error ? e.message : "Hotel not found"))
+      .finally(() => setLoading(false));
+  }, [params.id]);
 
   const roomData = useMemo(
     () => hotel?.room_types.find(r => r.name === selectedRoom) ?? hotel?.room_types[0],
@@ -69,6 +66,10 @@ export default function HotelDetailPage() {
 
   // Navigate to the dedicated checkout page with all booking params
   const goToBooking = () => {
+    if (!user) {
+      openLogin();
+      return;
+    }
     if (!hotel || !roomData || totalNights <= 0) return;
     const p = new URLSearchParams({
       check_in: checkIn,
@@ -81,7 +82,7 @@ export default function HotelDetailPage() {
     router.push(`/hotels/${hotel.id}/book?${p.toString()}`);
   };
 
-  if (loading || authLoading) return (
+  if (loading) return (
     <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
       <div className="flex min-h-[80vh] items-center justify-center">
         <Loader2 size={36} className="animate-spin text-[#005cab]" />
