@@ -25,6 +25,8 @@ import {
   Filter,
   ArrowUpDown,
   Building2,
+  Clock,
+  CreditCard,
 } from "lucide-react";
 
 const AMENITY_OPTIONS = [
@@ -57,6 +59,10 @@ export default function HotelsPage() {
   const [minRating, setMinRating] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [isPetAllowed, setIsPetAllowed] = useState(false);
+  const [isEarlyCheckIn, setIsEarlyCheckIn] = useState(false);
+  const [isLateCheckIn, setIsLateCheckIn] = useState(false);
+  const [isLateCheckOut, setIsLateCheckOut] = useState(false);
+  const [isPayAtHotel, setIsPayAtHotel] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [sortBy, setSortBy] = useState("Recommended");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -76,6 +82,10 @@ export default function HotelsPage() {
         min_rating: minRating ? Number(minRating) : undefined,
         amenities: selectedAmenities.length ? selectedAmenities : undefined,
         is_pet_allowed: isPetAllowed || undefined,
+        is_early_check_in_available: isEarlyCheckIn || undefined,
+        is_late_check_in_available: isLateCheckIn || undefined,
+        is_late_check_out_available: isLateCheckOut || undefined,
+        is_pay_at_hotel_available: isPayAtHotel || undefined,
       });
       setHotels(res.hotels);
     } catch (err: unknown) {
@@ -83,7 +93,7 @@ export default function HotelsPage() {
     } finally {
       setLoading(false);
     }
-  }, [city, q, minPrice, maxPrice, minRating, selectedAmenities, isPetAllowed]);
+  }, [city, q, minPrice, maxPrice, minRating, selectedAmenities, isPetAllowed, isEarlyCheckIn, isLateCheckIn, isLateCheckOut, isPayAtHotel]);
 
   useEffect(() => {
     fetchHotels();
@@ -102,6 +112,10 @@ export default function HotelsPage() {
     setMinRating("");
     setSelectedAmenities([]);
     setIsPetAllowed(false);
+    setIsEarlyCheckIn(false);
+    setIsLateCheckIn(false);
+    setIsLateCheckOut(false);
+    setIsPayAtHotel(false);
   };
 
   const activeFilterCount = [
@@ -110,6 +124,10 @@ export default function HotelsPage() {
     minRating,
     ...selectedAmenities,
     isPetAllowed ? "pet" : "",
+    isEarlyCheckIn ? "ec_in" : "",
+    isLateCheckIn ? "lc_in" : "",
+    isLateCheckOut ? "lc_out" : "",
+    isPayAtHotel ? "pay" : "",
   ].filter(Boolean).length;
 
   const ratingOptions = [
@@ -556,6 +574,26 @@ export default function HotelsPage() {
                 <PawPrint size={13} /> Pet Friendly <X size={12} />
               </button>
             )}
+            {isEarlyCheckIn && (
+              <button className="pill-tag active" onClick={() => setIsEarlyCheckIn(false)}>
+                Early Check-in <X size={12} />
+              </button>
+            )}
+            {isLateCheckIn && (
+              <button className="pill-tag active" onClick={() => setIsLateCheckIn(false)}>
+                Late Check-in <X size={12} />
+              </button>
+            )}
+            {isLateCheckOut && (
+              <button className="pill-tag active" onClick={() => setIsLateCheckOut(false)}>
+                Late Check-out <X size={12} />
+              </button>
+            )}
+            {isPayAtHotel && (
+              <button className="pill-tag active" onClick={() => setIsPayAtHotel(false)}>
+                Pay at Hotel <X size={12} />
+              </button>
+            )}
             {activeFilterCount > 0 && (
               <button onClick={clearFilters} style={{ fontSize: 13, color: "#FF6B35", background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}>
                 Clear all
@@ -685,16 +723,77 @@ export default function HotelsPage() {
                 <div style={{ height: 1, background: "#f0f0f0", marginBottom: 20 }} />
 
                 {/* Pet Friendly */}
-                <div className="pet-toggle" onClick={() => setIsPetAllowed(!isPetAllowed)}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <PawPrint size={18} color="#FF6B35" />
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Pet Friendly</div>
-                      <div style={{ fontSize: 12, color: "#aaa" }}>Allows pets & animals</div>
+                <div style={{ marginBottom: 12 }}>
+                  <div className="pet-toggle" onClick={() => setIsPetAllowed(!isPetAllowed)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <PawPrint size={18} color="#FF6B35" />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Pet Friendly</div>
+                      </div>
+                    </div>
+                    <div className={`toggle-track ${isPetAllowed ? "on" : ""}`}>
+                      <div className={`toggle-thumb ${isPetAllowed ? "on" : ""}`} />
                     </div>
                   </div>
-                  <div className={`toggle-track ${isPetAllowed ? "on" : ""}`}>
-                    <div className={`toggle-thumb ${isPetAllowed ? "on" : ""}`} />
+                </div>
+
+                {/* Policies */}
+                <div style={{ marginBottom: 12 }}>
+                  <div className="pet-toggle" onClick={() => setIsEarlyCheckIn(!isEarlyCheckIn)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <Clock size={18} color="#FF6B35" />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Early Check-in</div>
+                      </div>
+                    </div>
+                    <div className={`toggle-track ${isEarlyCheckIn ? "on" : ""}`}>
+                      <div className={`toggle-thumb ${isEarlyCheckIn ? "on" : ""}`} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <div className="pet-toggle" onClick={() => setIsLateCheckIn(!isLateCheckIn)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <Clock size={18} color="#FF6B35" />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Late Check-in</div>
+                      </div>
+                    </div>
+                    <div className={`toggle-track ${isLateCheckIn ? "on" : ""}`}>
+                      <div className={`toggle-thumb ${isLateCheckIn ? "on" : ""}`} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <div className="pet-toggle" onClick={() => setIsLateCheckOut(!isLateCheckOut)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <Clock size={18} color="#FF6B35" />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Late Check-out</div>
+                      </div>
+                    </div>
+                    <div className={`toggle-track ${isLateCheckOut ? "on" : ""}`}>
+                      <div className={`toggle-thumb ${isLateCheckOut ? "on" : ""}`} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ height: 1, background: "#f0f0f0", marginBottom: 20 }} />
+
+                {/* Payments */}
+                <div style={{ marginBottom: 12 }}>
+                  <div className="pet-toggle" onClick={() => setIsPayAtHotel(!isPayAtHotel)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <CreditCard size={18} color="#FF6B35" />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Pay at Hotel</div>
+                      </div>
+                    </div>
+                    <div className={`toggle-track ${isPayAtHotel ? "on" : ""}`}>
+                      <div className={`toggle-thumb ${isPayAtHotel ? "on" : ""}`} />
+                    </div>
                   </div>
                 </div>
               </div>
