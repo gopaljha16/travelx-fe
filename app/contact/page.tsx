@@ -1,90 +1,62 @@
 import Navbar from "@/components/Navbar";
+import { Headphones, Mail, MapPin, Phone } from "lucide-react";
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors duration-500">
+    <div className="tx-page">
       <Navbar />
-      
-      <main className="max-w-7xl mx-auto px-6 pt-32 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
-          {/* Contact Header */}
-          <div className="flex flex-col justify-between py-12">
-            <div>
-              <span className="text-[#ec6a2a] font-bold text-xs uppercase tracking-widest mb-6 block animate-fade-in">Connect with us</span>
-              <h1 className="text-[120px] font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-12 animate-slide-up">
-                Get <br />
-                In <br />
-                Touch.
-              </h1>
-            </div>
-            
-            <div className="space-y-12 animate-fade-in delay-200">
-              <div className="group">
-                <p className="text-[var(--foreground)] opacity-40 text-[10px] font-black uppercase tracking-widest mb-2">The Office</p>
-                <p className="text-xl font-bold text-[var(--foreground)] group-hover:text-[#ec6a2a] transition-colors leading-relaxed">
-                  24B Heritage Plaza, BKC <br />
-                  Mumbai, India (400051)
-                </p>
+
+      <section className="tx-shell py-10">
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[36px] bg-[linear-gradient(135deg,#ff6b35_0%,#ff884d_100%)] p-8 text-white sm:p-10">
+            <p className="tx-kicker text-orange-100">Contact TravelX</p>
+            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Need help with a booking?</h1>
+            <p className="mt-4 text-sm leading-7 text-white/80 sm:text-base">
+              Reach the TravelX support team for buses, hotels, payments, and booking issues.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
+                <div className="inline-flex items-center gap-2 text-sm font-bold">
+                  <Mail size={16} />
+                  Email
+                </div>
+                <p className="mt-2 text-sm text-white/80">support@travelx.com</p>
               </div>
-              <div className="group">
-                <p className="text-[var(--foreground)] opacity-40 text-[10px] font-black uppercase tracking-widest mb-2">Inquiries</p>
-                <p className="text-xl font-bold text-[var(--foreground)] group-hover:text-[#ec6a2a] transition-colors">
-                  support@travelx.com <br />
-                  +91 (022) 2344 5667
-                </p>
+              <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
+                <div className="inline-flex items-center gap-2 text-sm font-bold">
+                  <Phone size={16} />
+                  Phone
+                </div>
+                <p className="mt-2 text-sm text-white/80">+91 22 2344 5667</p>
+              </div>
+              <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
+                <div className="inline-flex items-center gap-2 text-sm font-bold">
+                  <MapPin size={16} />
+                  Office
+                </div>
+                <p className="mt-2 text-sm text-white/80">24B Heritage Plaza, BKC, Mumbai 400051</p>
               </div>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="bg-[var(--card)] p-12 rounded-[56px] border border-[var(--card-border)] mb-12 shadow-2xl shadow-black/5 animate-slide-up">
-            <form className="space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Your Name</label>
-                <input 
-                  type="text" 
-                  placeholder="John Doe"
-                  className="w-full bg-transparent border-b-2 border-[var(--card-border)] focus:border-[#ec6a2a] outline-none text-2xl font-bold text-[var(--foreground)] py-4 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Your Email</label>
-                <input 
-                  type="email" 
-                  placeholder="john@example.com"
-                  className="w-full bg-transparent border-b-2 border-[var(--card-border)] focus:border-[#ec6a2a] outline-none text-2xl font-bold text-[var(--foreground)] py-4 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Message</label>
-                <textarea 
-                  rows={4}
-                  placeholder="Tell us about your next journey..."
-                  className="w-full bg-transparent border-b-2 border-[var(--card-border)] focus:border-[#ec6a2a] outline-none text-xl font-bold text-[var(--foreground)] py-4 transition-all resize-none"
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                className="w-full bg-[#ec6a2a] text-white py-6 rounded-full font-black uppercase text-sm tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-[#ec6a2a]/20"
-              >
-                Send Message
+          <div className="tx-card p-6 sm:p-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+              <Headphones size={16} />
+              Support request
+            </div>
+            <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900">Tell us what you need.</h2>
+            <form className="mt-6 space-y-4">
+              <input className="tx-input" type="text" placeholder="Your name" />
+              <input className="tx-input" type="email" placeholder="Your email" />
+              <textarea className="min-h-[180px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#ff6b35] focus:ring-4 focus:ring-orange-100" placeholder="How can TravelX help?" />
+              <button type="submit" className="tx-button-primary">
+                Send message
               </button>
             </form>
           </div>
         </div>
-      </main>
-
-      {/* Footer Branding */}
-      <footer className="border-t border-[var(--card-border)] py-12 px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-30">
-          <p>© 2026 TRAVELX. BEYOND THE DESTINATION.</p>
-          <div className="flex gap-8">
-            <span>Instagram</span>
-            <span>LinkedIn</span>
-          </div>
-        </div>
-      </footer>
+      </section>
     </div>
   );
 }

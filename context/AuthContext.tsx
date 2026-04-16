@@ -18,6 +18,9 @@ interface AuthContextType {
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
+  isLoginModalOpen: boolean;
+  openLogin: () => void;
+  closeLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,6 +28,10 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const openLogin = () => setIsLoginModalOpen(true);
+  const closeLogin = () => setIsLoginModalOpen(false);
 
   const fetchUser = async () => {
     try {
@@ -51,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, setUser, logout, refetch: fetchUser }}>
+    <AuthContext.Provider value={{ user, loading, setUser, logout, refetch: fetchUser, isLoginModalOpen, openLogin, closeLogin }}>
       {children}
     </AuthContext.Provider>
   );

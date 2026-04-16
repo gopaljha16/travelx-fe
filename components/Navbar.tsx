@@ -2,100 +2,52 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { User, LogOut, Menu, Moon, Sun, Globe } from "lucide-react";
-import { useTheme } from "@/context/ThemeContext";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user, logout, openLogin } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    router.push("/");
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <header className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-sm border-b border-slate-200">
+      <nav className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+        <div className="flex items-center gap-12">
+          <Link href="/" className="text-2xl font-extrabold tracking-tight text-blue-700 font-headline">TravelX</Link>
+          <div className="hidden md:flex items-center gap-8 font-headline text-sm font-medium">
+            <Link className="text-blue-700 border-b-2 border-blue-600 pb-1" href="/hotels">Hotels</Link>
+            <Link className="text-slate-600 hover:text-blue-500 transition-colors" href="/buses">Bus</Link>
+          </div>
+        </div>
         
-        {/* LOGO */}
-        <Link href="/" className="flex items-center gap-1.5 font-bold text-2xl text-[#FF6B35] tracking-tight">
-          <Globe size={28} className="text-[#FF6B35]" />
-          TravelX
-        </Link>
-
-        {/* Center Links */}
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="/" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            Home
-          </Link>
-          <Link href="/buses" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            Buses
-          </Link>
-          <Link href="/hotels" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            Hotels
-          </Link>
-          <Link href="/about" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            About
-          </Link>
-          <Link href="/contact" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            Contact
-          </Link>
-          {user && (
-            <Link href="/bookings" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              My Bookings
-            </Link>
-          )}
-        </div>
-
-        {/* Right Section */}
         <div className="flex items-center gap-4">
-          <button 
-            onClick={toggleTheme}
-            className="hidden sm:flex text-gray-500 hover:text-gray-900 font-medium text-[15px] p-2.5 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Toggle Theme"
-          >
-            {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+          <button className="flex flex-col items-center justify-center p-1 px-4 hover:bg-slate-50 transition-colors text-slate-600 rounded-lg group">
+            <span className="material-symbols-outlined leading-none group-hover:text-pink-500 transition-colors" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>favorite</span>
+            <span className="text-[10px] font-bold mt-1">Wishlist</span>
           </button>
-          
+
           {user ? (
-            <div className="relative group">
-              <button className="flex items-center gap-2 border border-gray-300 rounded-full py-1.5 px-2 hover:shadow-md transition-shadow bg-white cursor-pointer">
-                <Menu size={18} className="text-gray-600 ml-1.5" />
-                <div className="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center overflow-hidden">
-                  <User size={18} />
-                </div>
-              </button>
-              
-              <div className="absolute right-0 top-[110%] w-56 bg-white rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] border border-gray-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
-                <Link href="/profile" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-semibold">Profile</Link>
-                <Link href="/bookings" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">My trips</Link>
-                <hr className="my-2 border-gray-200" />
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-normal">
-                   Log out
-                </button>
+            <button onClick={handleLogout} className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-lg bg-gradient-to-r from-[#008cff] to-[#005cab] hover:shadow-lg transition-all cursor-pointer group group-active:scale-95">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-inner shrink-0 text-[#005cab]">
+                <span className="font-bold text-[10px] tracking-tighter">TX</span>
               </div>
-            </div>
+              <span className="text-[11px] font-bold text-white tracking-tight uppercase">Logout</span>
+              <span className="material-symbols-outlined text-white text-[16px] leading-none group-hover:-translate-y-0.5 transition-transform" style={{ fontVariationSettings: "'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24" }}>logout</span>
+            </button>
           ) : (
-            <div className="relative group">
-              <button className="flex items-center gap-2 border border-gray-300 rounded-full py-1.5 px-2 hover:shadow-md transition-shadow bg-white cursor-pointer">
-                <Menu size={18} className="text-gray-600 ml-1.5" />
-                <div className="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center overflow-hidden">
-                  <User size={18} />
-                </div>
-              </button>
-              
-              <div className="absolute right-0 top-[110%] w-56 bg-white rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] border border-gray-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
-                <Link href="/login" className="block px-4 py-2.5 text-[14px] font-semibold text-gray-900 hover:bg-gray-50">Log in</Link>
-                <Link href="/login" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">Sign up</Link>
-                <hr className="my-2 border-gray-200" />
-                <Link href="/about" className="block px-4 py-2.5 text-[14px] text-gray-700 hover:bg-gray-50 font-normal">Help Center</Link>
+            <button onClick={() => openLogin()} className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-lg bg-gradient-to-r from-[#008cff] to-[#005cab] hover:shadow-lg transition-all cursor-pointer group group-active:scale-95 shadow-md">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-inner shrink-0 text-[#005cab]">
+                <span className="font-bold text-[10px] tracking-tighter">TX</span>
               </div>
-            </div>
+              <span className="text-[11px] font-bold text-white tracking-tight uppercase">Login or Create Account</span>
+              <span className="material-symbols-outlined text-white text-[16px] leading-none group-hover:translate-y-0.5 transition-transform" style={{ fontVariationSettings: "'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24" }}>expand_more</span>
+            </button>
           )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }

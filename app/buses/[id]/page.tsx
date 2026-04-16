@@ -1,327 +1,330 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import { getBus, bookBus, verifyBusPayment, Bus } from "@/lib/api";
+import { Bus, getBus } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { MapPin, Clock, Users, Loader2, Check, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function BusDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, openLogin } = useAuth();
 
   const [bus, setBus] = useState<Bus | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
-  const [bookingError, setBookingError] = useState("");
-  const [bookingSuccess, setBookingSuccess] = useState("");
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/login"); return; }
-    if (!user) return;
-    getBus(id).then(setBus).catch(() => setError("Route not found")).finally(() => setPageLoading(false));
-  }, [id, user, authLoading, router]);
+    getBus(params.id)
+      .then(setBus)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Bus not found"))
+      .finally(() => setPageLoading(false));
+  }, [params.id]);
 
-  const toggleSeat = (seat: number) => {
-    if (bus?.booked_seats.includes(seat)) return;
-    setSelectedSeats((prev) => prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]);
+  // Build seat rows: 2+2 for seater, 2 sides for sleeper
+  const isSleeper = useMemo(() => bus?.bus_type?.toLowerCase().includes("sleeper") ?? false, [bus]);
+  const seatsPerRow = isSleeper ? 3 : 4;
+
+  const seatRows = useMemo(() => {
+    if (!bus) return [];
+    return Array.from({ length: Math.ceil(bus.total_seats / seatsPerRow) }, (_, row) =>
+      Array.from({ length: seatsPerRow }, (_, col) => row * seatsPerRow + col + 1).filter(s => s <= bus.total_seats)
+    );
+  }, [bus, seatsPerRow]);
+
+  const totalPrice = (bus?.price_per_seat ?? 0) * selectedSeats.length;
+  const availableSeats = bus ? bus.total_seats - bus.booked_seats.length : 0;
+
+  const toggleSeat = (n: number) => {
+    if (!bus || bus.booked_seats.includes(n)) return;
+    setSelectedSeats(cur => cur.includes(n) ? cur.filter(s => s !== n) : [...cur, n]);
   };
 
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleBook = async () => {
-    if (!user) { router.push("/login"); return; }
-    if (!selectedSeats.length) return;
-    setBookingError(""); setBookingSuccess(""); setBookingLoading(true);
-    
-    try {
-      const sdkLoaded = await loadRazorpay();
-      if (!sdkLoaded) {
-        setBookingError("Razorpay SDK failed to load. Please check your connection.");
-        setBookingLoading(false);
-        return;
-      }
-
-      const booking = await bookBus(id, selectedSeats);
-      
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
-        amount: booking.total_price * 100,
-        currency: "INR",
-        name: "GoTravel",
-        description: `Bus Booking: ${bus?.name} (${selectedSeats.join(", ")})`,
-        order_id: booking.razorpay_order_id,
-        handler: async function (response: any) {
-          try {
-            setBookingLoading(true);
-            await verifyBusPayment({
-              booking_id: booking.id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            setBookingSuccess(`Route Confirmed & Payment Verified.`);
-            setShowBookingModal(true);
-            setSelectedSeats([]);
-            const updated = await getBus(id);
-            setBus(updated);
-          } catch (err: any) {
-            setBookingError(err.message || "Payment verification failed");
-          } finally {
-            setBookingLoading(false);
-          }
-        },
-        prefill: {
-          name: user.name || "",
-          email: user.email || "",
-          contact: user.phone || "",
-        },
-        theme: {
-          color: "#ec6a2a",
-        },
-        modal: {
-          ondismiss: function() {
-            setBookingLoading(false);
-          }
-        }
-      };
-
-      const paymentObject = new (window as any).Razorpay(options);
-      paymentObject.open();
-    } catch (err: any) {
-      setBookingError(err.message || "Transmission failed");
-      setBookingLoading(false);
+  const goToBooking = () => {
+    if (!user) {
+      openLogin();
+      return;
     }
+    if (!bus || selectedSeats.length === 0) return;
+    const p = new URLSearchParams({ seats: selectedSeats.join(","), price: String(bus.price_per_seat) });
+    router.push(`/buses/${bus.id}/book?${p.toString()}`);
+  };
+
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", weekday: "short" }) : "—";
+  const duration = () => {
+    if (!bus) return "—";
+    const [dh, dm] = bus.departure_time.split(":").map(Number);
+    const [ah, am] = bus.arrival_time.split(":").map(Number);
+    let mins = (ah * 60 + am) - (dh * 60 + dm);
+    if (mins < 0) mins += 1440;
+    return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
   if (pageLoading) return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors"><Navbar />
-      <div className="flex items-center justify-center min-h-[60vh]"><Loader2 size={40} className="animate-spin text-[#ec6a2a]" /></div>
+    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <Loader2 size={36} className="animate-spin text-[#005cab]" />
+      </div>
     </div>
   );
 
   if (error || !bus) return (
-    <div className="min-h-screen bg-[var(--background)] transition-colors"><Navbar />
-      <div className="text-center py-40 text-[var(--foreground)] opacity-40 font-black uppercase tracking-widest">{error || "Route not found"}</div>
+    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
+      <div className="max-w-5xl mx-auto px-6 py-32 text-center">
+        <h1 className="text-2xl font-black text-slate-900">Bus not found</h1>
+        <p className="text-slate-500 mt-2">{error}</p>
+        <button onClick={() => router.back()} className="mt-6 bg-[#005cab] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#004786]">Go back</button>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pb-40 transition-colors duration-500">
+    <div className="bg-[#f8f9ff] text-[#0f1c2c] font-body min-h-screen">
       <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-6 pt-24">
-        {/* Editorial Header Card */}
-        <div className="bg-[var(--card)] rounded-[64px] border-2 border-[var(--card-border)] p-12 md:p-16 mb-16 relative overflow-hidden shadow-2xl shadow-[#ec6a2a]/5">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#ec6a2a]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="flex-1 w-full text-left">
-               <p className="text-[10px] font-black text-[#ec6a2a] uppercase tracking-[0.5em] mb-6">Route Detail</p>
-               <h1 className="text-6xl md:text-8xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-8">{bus.name}.</h1>
-               <div className="flex items-center gap-4 text-[#ec6a2a] font-black text-[10px] bg-[#ec6a2a]/10 px-6 py-2 rounded-full uppercase tracking-widest w-fit border-2 border-[#ec6a2a]/20">
-                 {bus.bus_type}
-               </div>
-            </div>
 
-            <div className="flex-1 w-full flex items-center justify-between gap-12">
-              <div className="text-center min-w-[100px]">
-                <div className="text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-none">{bus.departure_time}</div>
-                <div className="flex items-center justify-center gap-2 text-[#ec6a2a] font-black text-[10px] uppercase tracking-widest mt-4">
-                  <MapPin size={14} /> {bus.from_city}
-                </div>
-              </div>
-              
-              <div className="flex-1 flex flex-col items-center">
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--card-border)] to-transparent relative">
-                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--card)] px-6">
-                      <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">🚌</span>
-                   </div>
-                </div>
-                <div className="text-[10px] font-black text-[var(--foreground)] opacity-20 uppercase tracking-widest mt-6 flex items-center gap-3">
-                  <Clock size={14} /> {new Date(bus.journey_date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
-                </div>
-              </div>
+      <main className="pt-28 pb-12 px-4 md:px-8 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-              <div className="text-center min-w-[100px]">
-                <div className="text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-none">{bus.arrival_time}</div>
-                <div className="flex items-center justify-center gap-2 text-[#ec6a2a] font-black text-[10px] uppercase tracking-widest mt-4">
-                  <MapPin size={14} /> {bus.to_city}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ── LEFT: Seat Map ─────────────────────────────────── */}
+        <div className="lg:col-span-8 space-y-6">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Seat Map Design */}
-          <div className="lg:col-span-2 bg-[var(--card)] rounded-[80px] border-2 border-[var(--card-border)] p-12 md:p-20 shadow-2xl shadow-[#ec6a2a]/5">
-            <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-8 mb-20">
+          {/* Hero Info Card */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#c0c7d6]/20">
+            <header className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
               <div>
-                <h2 className="text-4xl font-black text-[var(--foreground)] tracking-tighter uppercase leading-[0.8] mb-4">Select Your Position.</h2>
-                <p className="text-[var(--foreground)] opacity-40 font-bold text-sm">Every seat on TravelX is verified for ergonomic comfort.</p>
-              </div>
-              <div className="flex gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[var(--card-border)]" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Open</span>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#005cab] mb-2">{bus.bus_type}</p>
+                <h1 className="font-headline text-3xl font-extrabold text-[#0f1c2c]">{bus.name}</h1>
+                <div className="flex items-center gap-4 mt-3 text-[#404754]">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold">
+                    <span className="material-symbols-outlined text-[#005cab] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                    {bus.from_city}
+                  </span>
+                  <span className="material-symbols-outlined text-[#c0c7d6] text-[18px]">arrow_forward</span>
+                  <span className="flex items-center gap-1.5 text-sm font-semibold">
+                    <span className="material-symbols-outlined text-orange-500 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                    {bus.to_city}
+                  </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-[#ec6a2a] shadow-lg shadow-[#ec6a2a]/30" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Reserved</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-[var(--muted)] border-2 border-[var(--card-border)] flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-[var(--foreground)] opacity-10 rounded-full" />
+                <div className="flex flex-wrap gap-4 mt-4">
+                  <div className="bg-[#eef4ff] px-3 py-1.5 rounded-full text-xs font-bold text-[#005cab] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    {bus.departure_time} → {bus.arrival_time} ({duration()})
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-40">Unavailable</span>
+                  <div className="bg-[#eef4ff] px-3 py-1.5 rounded-full text-xs font-bold text-[#005cab] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                    {fmtDate(bus.journey_date)}
+                  </div>
                 </div>
+              </div>
+
+              {/* Price */}
+              <div className="text-right shrink-0">
+                <p className="text-xs text-[#404754] font-medium">Starting from</p>
+                <p className="text-3xl font-headline font-black text-[#005cab]">₹{bus.price_per_seat.toLocaleString()}</p>
+                <p className="text-xs text-[#404754]">per seat</p>
+              </div>
+            </header>
+
+            {/* Amenity chips */}
+            {bus.amenities?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-8 pb-6 border-b border-[#c0c7d6]/20">
+                {bus.amenities.map(a => (
+                  <span key={a} className="flex items-center gap-1 px-2.5 py-1 bg-[#eef4ff] rounded-lg text-xs font-semibold text-[#404754]">
+                    <span className="material-symbols-outlined text-[14px] text-[#005cab]">
+                      {a.toLowerCase().includes("wifi") ? "wifi" : a.toLowerCase().includes("ac") ? "ac_unit" : a.toLowerCase().includes("charg") ? "power" : "check_circle"}
+                    </span>
+                    {a}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Seat Legend */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-headline text-xl font-bold text-[#0f1c2c]">Select Your Seats</h2>
+              <div className="flex gap-5">
+                {[
+                  { color: "bg-white border border-[#c0c7d6]", label: "Available" },
+                  { color: "bg-[#005cab]", label: "Selected" },
+                  { color: "bg-[#d6e4f9]", label: "Booked" },
+                ].map(({ color, label }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded ${color}`} />
+                    <span className="text-xs font-medium text-[#404754]">{label}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Realistic Cabin Architecture */}
-            <div className="relative max-w-sm mx-auto bg-[var(--muted)] rounded-[64px] p-12 border-2 border-[var(--card-border)]">
-              <div className="flex items-center justify-between mb-16 pb-12 border-b-2 border-dashed border-[var(--card-border)]">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 bg-[var(--background)] rounded-full border-2 border-[var(--card-border)] flex items-center justify-center text-[var(--foreground)] opacity-20 hover:opacity-100 transition-opacity">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v10"/><path d="m12 12 7 7"/><path d="m12 12-7 7"/></svg>
-                  </div>
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] opacity-20">Navigation Controller</span>
+            {/* Seat Grid */}
+            <div className="bg-[#eef4ff] rounded-2xl p-6">
+              {/* Bus front indicator */}
+              <div className="flex items-center gap-3 mb-6 text-[#404754]">
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span className="material-symbols-outlined text-[16px]">directions_bus</span>
+                  Front of Bus
                 </div>
-                <div className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-20 -rotate-90">Cabin Terminal</div>
-                <div className="w-16 h-16 bg-[#ec6a2a]/10 rounded-3xl flex items-center justify-center text-[#ec6a2a] border-2 border-[#ec6a2a]/20">
-                  <Clock size={28} />
+                <div className="flex-1 h-px bg-[#c0c7d6]/40" />
+              </div>
+
+              <div className="max-w-md mx-auto space-y-2.5">
+                {seatRows.map((row, ri) => (
+                  <div key={ri} className={`grid gap-2.5 ${seatsPerRow === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+                    {row.map(seatNum => {
+                      const booked = bus.booked_seats.includes(seatNum);
+                      const selected = selectedSeats.includes(seatNum);
+                      return (
+                        <button
+                          key={seatNum}
+                          onClick={() => toggleSeat(seatNum)}
+                          disabled={booked}
+                          className={`h-12 flex items-center justify-center rounded-xl text-xs font-black transition-all ${
+                            booked
+                              ? "bg-[#d6e4f9] text-[#707785] border border-[#c0c7d6] opacity-60 cursor-not-allowed"
+                              : selected
+                                ? "bg-[#005cab] text-white shadow-lg shadow-[#005cab]/25 scale-105"
+                                : "bg-white border-[1.5px] border-[#c0c7d6] text-[#404754] hover:border-[#005cab] hover:text-[#005cab]"
+                          }`}
+                        >
+                          {seatNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-center text-xs text-[#404754] mt-6 font-medium">
+                {availableSeats} seat{availableSeats !== 1 ? "s" : ""} available · {bus.total_seats} total
+              </p>
+            </div>
+          </div>
+
+          {/* Bus Comfort Gallery */}
+          {bus.images && bus.images.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">chair</span>
+                <h2 className="font-headline text-xl font-bold text-[#0f1c2c]">Inside Your Bus</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative h-64 rounded-2xl overflow-hidden border border-[#c0c7d6]/20 shadow-sm group">
+                  <Image src={bus.images[0]} alt="Bus Interior" fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <p className="absolute bottom-4 left-4 text-white text-xs font-bold uppercase tracking-widest">Premium Cabin</p>
+                </div>
+                {bus.images[1] && (
+                  <div className="relative h-64 rounded-2xl overflow-hidden border border-[#c0c7d6]/20 shadow-sm group">
+                    <Image src={bus.images[1]} alt="Bus Comfort" fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <p className="absolute bottom-4 left-4 text-white text-xs font-bold uppercase tracking-widest">Luxury Comfort</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium italic">* Images are for representation and represent the service class quality.</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT: Summary ─────────────────────────────────── */}
+        <aside className="lg:col-span-4">
+          <div className="sticky top-28 space-y-5">
+
+            {/* Booking Summary Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#c0c7d6]/20 overflow-hidden">
+              {/* Blue gradient header */}
+              <div className="bg-gradient-to-br from-[#005cab] to-[#0075d7] p-6 text-white">
+                <h2 className="font-headline text-xl font-bold">Booking Summary</h2>
+                <div className="flex justify-between items-center mt-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest opacity-80">Journey Date</p>
+                    <p className="font-bold text-sm mt-0.5">{fmtDate(bus.journey_date)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-widest opacity-80">Duration</p>
+                    <p className="font-bold text-sm mt-0.5">{duration()}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Grid with improved visual feedback */}
-              <div className="flex flex-col gap-6">
-                {(() => {
-                  const isSleeper = bus.bus_type.toLowerCase().includes("sleeper");
-                  const layout = isSleeper ? [1, 2, 0, 3] : [1, 2, 0, 3, 4];
-                  const seatsPerRow = isSleeper ? 3 : 4;
-                  const totalRows = Math.ceil(bus.total_seats / seatsPerRow);
-                  
-                  return Array.from({ length: totalRows }).map((_, rowIndex) => (
-                    <div key={rowIndex} className="flex justify-between gap-4">
-                      {layout.map((col, colIndex) => {
-                        if (col === 0) return <div key={`aisle-${rowIndex}`} className="w-12 shrink-0 flex items-center justify-center"><div className="w-0.5 h-full bg-[var(--card-border)]/30 border-dashed border-r" /></div>;
-                        
-                        const seatIndex = rowIndex * seatsPerRow + (colIndex > 2 ? colIndex - 1 : colIndex);
-                        const seatNumber = seatIndex + 1;
-                        if (seatNumber > bus.total_seats) return <div key={`empty-${colIndex}`} className="flex-1 invisible" />;
-
-                        const isBooked = bus.booked_seats.includes(seatNumber);
-                        const isSelected = selectedSeats.includes(seatNumber);
-                        
-                        return (
-                          <button
-                            key={seatNumber}
-                            onClick={() => toggleSeat(seatNumber)}
-                            disabled={isBooked}
-                            className={`flex-1 rounded-2xl transition-all duration-500 relative group overflow-hidden border-2 ${
-                              isSleeper ? "h-24" : "h-16"
-                            } ${
-                              isBooked ? "bg-[var(--card-border)]/20 border-[var(--card-border)] text-[var(--foreground)] opacity-5 cursor-not-allowed" :
-                              isSelected ? "bg-[#ec6a2a] border-transparent text-white shadow-2xl shadow-[#ec6a2a]/40 -translate-y-2" :
-                              "bg-[var(--card)] border-[var(--card-border)] text-[var(--foreground)] hover:border-[#ec6a2a] hover:bg-[#ec6a2a]/5 shadow-sm active:scale-90"
-                            }`}
-                          >
-                            <span className="text-xs font-black relative z-10">{seatNumber}</span>
-                            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1.5 rounded-b-lg ${isSelected ? "bg-white/40" : "bg-[var(--card-border)]"}`} />
-                          </button>
-                        );
-                      })}
+              <div className="p-6 space-y-6">
+                {/* Selected Seats */}
+                <div>
+                  <p className="text-xs font-bold text-[#404754] uppercase tracking-wider mb-3">
+                    Selected Seats ({selectedSeats.length})
+                  </p>
+                  {selectedSeats.length === 0 ? (
+                    <p className="text-sm text-[#404754] italic bg-[#eef4ff] rounded-xl px-4 py-3">No seats selected yet</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSeats.map(s => (
+                        <div key={s} className="flex items-center gap-2 bg-[#eef4ff] px-3 py-2 rounded-xl">
+                          <div className="w-7 h-7 rounded-lg bg-[#005cab] flex items-center justify-center text-white text-xs font-bold shadow-sm">{s}</div>
+                          <span className="text-sm font-semibold text-[#0f1c2c]">Seat {s}</span>
+                          <span className="font-bold text-xs text-[#005cab]">₹{bus.price_per_seat.toLocaleString()}</span>
+                        </div>
+                      ))}
                     </div>
-                  ));
-                })()}
-              </div>
-
-              <div className="mt-16 flex justify-center">
-                <div className="text-[9px] font-black uppercase tracking-[0.5em] text-[var(--foreground)] opacity-10 py-3 border-y-2 border-[var(--card-border)] flex gap-4 w-full justify-center">
-                  <span>Entry Exit Protocol</span>
+                  )}
                 </div>
+
+                {/* Price Breakdown */}
+                <div className="pt-4 border-t border-[#c0c7d6]/20 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#404754]">Base Fare ({selectedSeats.length} seat{selectedSeats.length !== 1 ? "s" : ""})</span>
+                    <span className="font-medium">₹{totalPrice.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#404754]">Taxes & Fees</span>
+                    <span className="font-medium text-emerald-600">Included</span>
+                  </div>
+                  <div className="flex justify-between items-end pt-2 border-t border-dashed border-[#c0c7d6]/30">
+                    <span className="font-bold text-lg text-[#0f1c2c]">Total Amount</span>
+                    <span className="font-headline font-extrabold text-2xl text-[#005cab]">₹{totalPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={goToBooking}
+                  disabled={selectedSeats.length === 0}
+                  className="w-full py-4 rounded-xl bg-gradient-to-br from-[#005cab] to-[#0075d7] text-white font-headline font-bold text-base shadow-lg shadow-[#005cab]/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 transition-all flex items-center justify-center gap-2"
+                >
+                  {selectedSeats.length === 0 ? "Select seats to continue" : <>Proceed to Booking <span className="material-symbols-outlined text-[18px]">arrow_forward</span></>}
+                </button>
+              </div>
+            </div>
+
+            {/* Trust Badge */}
+            <div className="bg-[#eef4ff] rounded-2xl p-4 flex items-center gap-4 border border-[#c0c7d6]/20">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                <span className="material-symbols-outlined text-emerald-600 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#0f1c2c]">TravelX Secure Booking</p>
+                <p className="text-[10px] text-[#404754]">Instant confirmation & 24/7 support.</p>
               </div>
             </div>
           </div>
+        </aside>
+      </main>
 
-          {/* Checkout Logic redesign */}
-          <div className="bg-[var(--card)] rounded-[56px] border-2 border-[var(--card-border)] p-10 md:p-12 h-fit sticky top-24 shadow-2xl shadow-[#ec6a2a]/5 animate-slide-up">
-            <h2 className="text-3xl font-black text-[var(--foreground)] uppercase tracking-tighter mb-10">Consolidated Summary.</h2>
-
-            {bookingSuccess && <div className="bg-green-500/10 border-2 border-green-500/20 text-green-500 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest mb-10 animate-fade-in">{bookingSuccess}</div>}
-            {bookingError && <div className="bg-red-500/10 border-2 border-red-500/20 text-red-500 rounded-[28px] px-8 py-5 text-xs font-black uppercase tracking-widest mb-10 animate-fade-in">{bookingError}</div>}
-
-            <div className="space-y-6 mb-12">
-              <div className="flex justify-between items-baseline gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-30">Unit Rate</span>
-                <span className="text-xl font-black text-[var(--foreground)] tracking-tighter">₹{bus.price_per_seat.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-baseline gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-30">Positions</span>
-                <span className="text-xl font-black text-[#ec6a2a] tracking-tighter">{selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}</span>
-              </div>
-              <div className="pt-8 border-t-2 border-[var(--card-border)]/50 flex justify-between items-baseline gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] opacity-30">Settlement</span>
-                <span className="text-5xl font-black text-[var(--foreground)] tracking-tighter">₹{(bus.price_per_seat * selectedSeats.length).toLocaleString()}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleBook}
-              disabled={bookingLoading || selectedSeats.length === 0}
-              className="w-full bg-[#ec6a2a] text-white py-6 rounded-[32px] font-black uppercase tracking-[0.3em] text-[10px] hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-[#ec6a2a]/30 disabled:opacity-30 disabled:hover:scale-100 flex items-center justify-center gap-3"
-            >
-              {bookingLoading ? <Loader2 size={18} className="animate-spin" /> : `Commit ${selectedSeats.length} Reserve${selectedSeats.length !== 1 ? "s" : ""}`}
-            </button>
-            {!user && <p className="text-[10px] font-black text-center text-[var(--foreground)] opacity-20 mt-6 uppercase tracking-widest">Authentication Required</p>}
+      {/* Footer */}
+      <footer className="w-full py-12 px-8 border-t border-slate-100 bg-slate-50 mt-4">
+        <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-6 text-sm">
+          <div>
+            <span className="font-bold text-slate-900 font-headline">TravelX</span>
+            <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">© 2026 TravelX. All rights reserved.</p>
           </div>
-        </div>
-      </div>
-
-      {/* Confirmation Modal redesign */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-[var(--background)]/80 backdrop-blur-3xl flex items-center justify-center z-50 p-6 animate-fade-in">
-          <div className="bg-[var(--card)] rounded-[80px] p-16 md:p-24 w-full max-w-2xl shadow-2xl border-2 border-[var(--card-border)] animate-slide-up text-center relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-2 bg-[#ec6a2a]" />
-            <div className="w-24 h-24 bg-[#ec6a2a] rounded-full flex items-center justify-center mx-auto mb-12 shadow-2xl shadow-[#ec6a2a]/30">
-                <Check size={40} strokeWidth={4} className="text-white" />
-            </div>
-            
-            <h3 className="text-5xl font-black text-[var(--foreground)] tracking-tighter uppercase mb-6 leading-[0.8]">Position <br /> Secured.</h3>
-            <p className="text-[var(--foreground)] opacity-50 font-bold mb-16 leading-relaxed max-w-sm mx-auto">
-              Your route from <span className="text-[var(--foreground)] opacity-100">{bus.from_city}</span> to <span className="text-[var(--foreground)] opacity-100">{bus.to_city}</span> has been committed to the network.
-            </p>
-
-            <div className="flex flex-col gap-6">
-              <button
-                onClick={() => router.push("/bookings")}
-                className="w-full bg-[#ec6a2a] text-white py-6 rounded-[32px] font-black uppercase tracking-[0.3em] text-[10px] hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-[#ec6a2a]/30 flex items-center justify-center gap-3"
-              >
-                Go to Archives <ArrowRight size={18} />
-              </button>
-              <button
-                onClick={() => setShowBookingModal(false)}
-                className="w-full text-[var(--foreground)] opacity-30 font-black py-4 rounded-full uppercase tracking-widest text-[10px] hover:opacity-100 transition-opacity"
-              >
-                Close Portal
-              </button>
-            </div>
+          <div className="flex gap-8">
+            {["Privacy Policy", "Terms of Service", "Fleet Info", "Contact"].map(l => (
+              <a key={l} href="#" className="text-slate-400 hover:text-[#005cab] transition-colors text-xs uppercase tracking-widest">{l}</a>
+            ))}
           </div>
         </div>
-      )}
+      </footer>
     </div>
   );
 }
