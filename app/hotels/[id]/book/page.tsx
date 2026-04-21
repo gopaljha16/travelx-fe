@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Hotel, Booking, createBooking, getHotel, verifyPayment } from "@/lib/api";
@@ -13,23 +13,40 @@ type RazorpayResponse = {
   razorpay_order_id: string;
   razorpay_signature: string;
 };
+
 type RazorpayOptions = {
-  key: string; amount: number; currency: string; name: string; description: string;
-  order_id?: string; handler: (r: RazorpayResponse) => void | Promise<void>;
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id?: string;
+  handler: (r: RazorpayResponse) => void | Promise<void>;
   prefill: { name: string; email: string; contact: string };
-  theme: { color: string }; 
+  theme: { color: string };
   modal: { ondismiss: () => void };
   config?: {
     display?: {
       hide?: { method: string }[];
       preferences?: { show_default_blocks: boolean };
+      // FIX: Added missing nested types for Razorpay blocks and sequence
+      blocks?: Record<string, {
+        name: string;
+        instruments: { method: string; flows?: string[] }[];
+      }>;
+      sequence?: string[];
     }
   };
   method?: { [key: string]: boolean };
 };
-declare global { interface Window { Razorpay?: new (o: RazorpayOptions) => { open: () => void }; } }
 
-export default function HotelBookPage() {
+declare global {
+  interface Window {
+    Razorpay?: new (o: RazorpayOptions) => { open: () => void };
+  }
+}
+
+function BookingContent() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -49,26 +66,30 @@ export default function HotelBookPage() {
   const [error, setError] = useState("");
 
   // Guest form state
-  const [guestName, setGuestName] = useState(user?.name ?? "");
-  const [guestEmail, setGuestEmail] = useState(user?.email ?? "");
-  const [guestPhone, setGuestPhone] = useState(user?.phone ?? "");
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
   const [additionalGuest, setAdditionalGuest] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
 
-  // Calc total nights & price
+  // FIX: Robust calculation to handle potential NaN or invalid dates
   const totalNights = checkIn && checkOut
     ? Math.max(0, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
     : 0;
-  const subtotal = pricePerNight * totalNights * numRooms;
-  const taxes = Math.round(subtotal * 0);   // taxes assumed inclusive; backend handles
+  
+  const subtotal = isNaN(totalNights) ? 0 : pricePerNight * totalNights * numRooms;
   const total = subtotal;
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/"); return; }
+    if (!user && !authLoading) {
+      router.push("/");
+      return;
+    }
     if (user) {
-      setGuestName(user.name ?? "");
-      setGuestEmail(user.email ?? "");
-      setGuestPhone(user.phone ?? "");
+      setGuestName((prev) => prev || user.name || "");
+      setGuestEmail((prev) => prev || user.email || "");
+      setGuestPhone((prev) => prev || user.phone || "");
+      
       getHotel(params.id)
         .then(setHotel)
         .catch(() => setError("Hotel not found"))
@@ -81,7 +102,8 @@ export default function HotelBookPage() {
       new Promise<boolean>(res => {
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
-        s.onload = () => res(true); s.onerror = () => res(false);
+        s.onload = () => res(true);
+        s.onerror = () => res(false);
         document.body.appendChild(s);
       });
 
@@ -93,6 +115,7 @@ export default function HotelBookPage() {
     try {
       const ok = await loadRazorpay();
       if (!ok || !window.Razorpay) throw new Error("Razorpay SDK failed to load.");
+      
       const booking: Booking = await createBooking({
         hotel_id: hotel.id,
         room_type_name: roomName,
@@ -101,6 +124,7 @@ export default function HotelBookPage() {
         num_rooms: numRooms,
         num_guests: numGuests,
       });
+
       new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
         amount: booking.total_price * 100,
@@ -111,11 +135,12 @@ export default function HotelBookPage() {
         handler: async (res) => {
           try {
             await verifyPayment({ booking_id: booking.id, ...res });
-            // Navigate to the dedicated confirmation page with real booking data
             router.push(`/bookings/${booking.id}/confirmation`);
           } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Payment verification failed");
-          } finally { setBookingLoading(false); }
+          } finally {
+            setBookingLoading(false);
+          }
         },
         prefill: { name: guestName, email: guestEmail, contact: guestPhone },
         theme: { color: "#005cab" },
@@ -152,10 +177,14 @@ export default function HotelBookPage() {
     }
   };
 
-  const formatDate = (d: string) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   if (loading || authLoading) return (
-    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
+    <div className="min-h-screen bg-[#f8f9ff]">
+      <Navbar />
       <div className="flex min-h-[80vh] items-center justify-center">
         <Loader2 size={36} className="animate-spin text-[#005cab]" />
       </div>
@@ -163,7 +192,8 @@ export default function HotelBookPage() {
   );
 
   if (!hotel) return (
-    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
+    <div className="min-h-screen bg-[#f8f9ff]">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-6 py-32 text-center">
         <h1 className="text-2xl font-black text-slate-900">Hotel not found</h1>
         <button onClick={() => router.back()} className="mt-4 text-[#005cab] font-bold hover:underline">Go back</button>
@@ -263,7 +293,7 @@ export default function HotelBookPage() {
               {/* CTA */}
               <button
                 type="submit"
-                disabled={bookingLoading || totalNights <= 0}
+                disabled={bookingLoading || isNaN(totalNights) || totalNights <= 0}
                 className="w-full py-5 rounded-xl bg-[#005cab] hover:bg-[#004786] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-headline font-bold text-lg shadow-xl shadow-[#005cab]/20 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
               >
                 {bookingLoading ? (
@@ -281,7 +311,6 @@ export default function HotelBookPage() {
           {/* ── RIGHT: Summary Sidebar ─────────────────────────── */}
           <div className="lg:col-span-4">
             <aside className="sticky top-32 space-y-5">
-
               {/* Hotel Card */}
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#c0c7d6]/20">
                 <div className="h-44 bg-[#d6e4f9] relative">
@@ -310,7 +339,7 @@ export default function HotelBookPage() {
                   {/* Room badge */}
                   {roomName && (
                     <div className="bg-[#eef4ff] px-4 py-2.5 rounded-xl text-sm font-semibold text-[#005cab] flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">king_bed</span>
+                       <span className="material-symbols-outlined text-[18px]">king_bed</span>
                       {roomName}
                     </div>
                   )}
@@ -330,7 +359,7 @@ export default function HotelBookPage() {
                   {/* Price breakdown */}
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#404754]">{totalNights} Night{totalNights > 1 ? 's' : ''}, {numGuests} Guest{numGuests > 1 ? 's' : ''}, {numRooms} Room{numRooms > 1 ? 's' : ''}</span>
+                      <span className="text-[#404754]">{isNaN(totalNights) ? 0 : totalNights} Night{totalNights > 1 ? 's' : ''}, {numGuests} Guest{numGuests > 1 ? 's' : ''}, {numRooms} Room{numRooms > 1 ? 's' : ''}</span>
                       <span className="font-medium">₹{subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -345,52 +374,34 @@ export default function HotelBookPage() {
                 </div>
               </div>
 
-              {/* Trust badge */}
-              <div className="bg-[#eef4ff] p-4 rounded-2xl flex items-center gap-4 border border-[#c0c7d6]/20">
-                <div className="bg-white p-2.5 rounded-xl shadow-sm">
-                  <span className="material-symbols-outlined text-[#00628d] text-[22px]">verified</span>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#0f1c2c]">Price Match Guarantee</p>
-                  <p className="text-xs text-[#404754]">Found it cheaper? We'll refund the difference.</p>
-                </div>
-              </div>
-
               {/* Policies */}
               <div className="space-y-3 px-1">
                 <div className="flex gap-3">
                   <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">check_circle</span>
-                  <p className="text-xs text-[#404754]">Free cancellation before check-in date in most cases. Terms apply.</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="material-symbols-outlined text-[18px] text-[#404754] shrink-0">info</span>
-                  <p className="text-xs text-[#404754]">You will be charged ₹{total.toLocaleString()} immediately upon payment confirmation.</p>
+                  <p className="text-xs text-[#404754]">Free cancellation before check-in date. Terms apply.</p>
                 </div>
                 <div className="flex gap-3">
                   <span className="material-symbols-outlined text-[18px] text-[#005cab] shrink-0">lock</span>
                   <p className="text-xs text-[#404754]">256-bit SSL encrypted. Your payment data is never stored.</p>
                 </div>
               </div>
-
             </aside>
           </div>
         </div>
       </main>
-
-{/* ── FOOTER ────────────────────────────────────────────── */}
-      <footer className="w-full py-12 mt-auto bg-slate-50 border-t border-slate-200/50">
-        <div className="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6 text-sm">
-          <div className="flex flex-col gap-1 items-center md:items-start">
-            <span className="text-lg font-bold text-slate-900">TravelX</span>
-            <p className="text-slate-500">© 2026 TravelX Digital Concierge. All rights reserved.</p>
-          </div>
-          <div className="flex gap-8">
-            {["Privacy Policy", "Terms of Service", "Help Center", "Partner with us"].map(l => (
-              <a key={l} href="#" className="text-slate-500 hover:text-slate-900 transition-colors underline decoration-blue-500/30 underline-offset-4">{l}</a>
-            ))}
-          </div>
-        </div>
-      </footer>
     </div>
+  );
+}
+
+// FIX: Wrap logic in Suspense to satisfy Next.js useSearchParams() requirements in static rendering
+export default function HotelBookPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center">
+        <Loader2 size={36} className="animate-spin text-[#005cab]" />
+      </div>
+    }>
+      <BookingContent />
+    </Suspense>
   );
 }

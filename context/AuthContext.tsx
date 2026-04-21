@@ -10,6 +10,7 @@ interface User {
   name?: string;
   is_onboarded?: boolean;
   is_active: boolean;
+  must_change_password?: boolean;
 }
 
 interface AuthContextType {

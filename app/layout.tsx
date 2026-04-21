@@ -3,7 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { WishlistProvider } from "@/context/WishlistContext";
-import LoginModal from "@/components/LoginModal";
+import AuthModal from "@/components/LoginModal";
+import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 export const metadata: Metadata = {
   title: "TravelX - Your Digital Concierge",
@@ -23,8 +24,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <WishlistProvider>
-              {children}
-              <LoginModal />
+              <main className="flex-1 pt-20">
+                {children}
+              </main>
+              <AuthModal />
+              <ForcePasswordChangeModal />
             </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>
