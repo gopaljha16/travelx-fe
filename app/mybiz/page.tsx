@@ -143,13 +143,6 @@ export default function MyBizDashboardPage() {
                 sub: "with full access",
               },
               {
-                icon: <BadgeCheck size={22} className="text-tertiary" />,
-                bg: "bg-tertiary/10",
-                label: "Managers",
-                value: managerCount,
-                sub: "with elevated access",
-              },
-              {
                 icon: <Wallet size={22} className="text-orange-500" />,
                 bg: "bg-orange-50",
                 label: "Wallet Balance",
@@ -270,12 +263,11 @@ export default function MyBizDashboardPage() {
 function RoleBadge({ role }: { role: string }) {
   const styles: Record<string, string> = {
     admin: "bg-primary/10 text-primary",
-    manager: "bg-tertiary/10 text-tertiary",
     employee: "bg-surface-container-high text-on-surface-variant",
   };
   return (
     <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ${styles[role] ?? styles.employee}`}>
-      {role}
+      {role === 'manager' ? 'employee' : role}
     </span>
   );
 }

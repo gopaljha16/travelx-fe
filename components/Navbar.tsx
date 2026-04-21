@@ -34,12 +34,14 @@ export default function Navbar() {
               >
                 Bus
               </Link>
-              <Link 
-                className={`${pathname.startsWith('/mybiz') ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
-                href="/mybiz"
-              >
-                MyBiz
-              </Link>
+              {user?.corporate_role === 'admin' && (
+                <Link 
+                  className={`${pathname.startsWith('/mybiz') ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
+                  href="/mybiz"
+                >
+                  MyBiz
+                </Link>
+              )}
             </div>
           )}
         </div>

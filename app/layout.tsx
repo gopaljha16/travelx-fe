@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -27,7 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main className="flex-1 pt-20">
                 {children}
               </main>
-              <AuthModal />
+              <Suspense fallback={null}>
+                <AuthModal />
+              </Suspense>
               <ForcePasswordChangeModal />
             </WishlistProvider>
           </AuthProvider>

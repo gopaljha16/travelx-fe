@@ -11,6 +11,7 @@ interface User {
   is_onboarded?: boolean;
   is_active: boolean;
   must_change_password?: boolean;
+  corporate_role?: string;
 }
 
 interface AuthContextType {
@@ -52,6 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => { fetchUser(); }, []);
+  
+  useEffect(() => {
+    // Auto-open login modal if specifically requested in URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "true" && !user && !loading) {
+      openLogin();
+    }
+  }, [user, loading]);
 
   const logout = async () => {
     await apiLogout().catch(() => {});

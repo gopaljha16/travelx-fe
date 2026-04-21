@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Mail, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Mail, X, Building2, ChevronRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { login, onboard, sendOtp, verifyOtp } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
@@ -25,6 +27,25 @@ export default function LoginModal() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (isLoginModalOpen) {
+      const emailParam = searchParams.get("email");
+      const tempPassParam = searchParams.get("temp_pass");
+      const loginParam = searchParams.get("login");
+
+      if (emailParam) setIdentifier(emailParam);
+      if (tempPassParam) {
+        setPassword(tempPassParam);
+        setLoginMethod("PASSWORD");
+      }
+      if (loginParam === "true") {
+        setAuthMode("LOGIN");
+      }
+    }
+  }, [isLoginModalOpen, searchParams]);
 
   if (!isLoginModalOpen) return null;
 
@@ -332,7 +353,21 @@ export default function LoginModal() {
             )}
           </div>
 
-          <div className="mt-8 pt-4 text-center">
+          <div className="mt-8 pt-4 text-center border-t border-slate-100">
+            <div className="bg-blue-50/50 rounded-xl p-4 mb-6 group cursor-pointer hover:bg-blue-50 transition-all border border-blue-100/50">
+               <Link href="/mybiz/onboard" className="flex items-center justify-between" onClick={closeAndReset}>
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary">
+                      <Building2 size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-[#008cff]">Work / Business Account</p>
+                      <p className="text-xs font-bold text-slate-700">Join MyBiz to get corporate discounts</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition-all" />
+               </Link>
+            </div>
             <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
               By proceeding, you agree to TravelX's <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>, <span className="text-primary cursor-pointer hover:underline">User Agreement</span> and <span className="text-primary cursor-pointer hover:underline">T&Cs</span>
             </p>

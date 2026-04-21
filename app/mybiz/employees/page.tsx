@@ -237,7 +237,6 @@ function EmployeeManagementContent() {
                             disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id}
                           >
                             <option value="employee">Employee</option>
-                            <option value="manager">Manager</option>
                             <option value="admin">Admin</option>
                           </select>
                         </td>
@@ -378,8 +377,8 @@ function EmployeeManagementContent() {
 
                       <div className="space-y-2">
                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Organisation Role</label>
-                         <div className="grid grid-cols-3 gap-3">
-                           {['employee', 'manager', 'admin'].map((role) => (
+                         <div className="grid grid-cols-2 gap-3">
+                           {['employee', 'admin'].map((role) => (
                              <button
                                key={role}
                                type="button"
