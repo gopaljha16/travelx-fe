@@ -23,10 +23,22 @@ export default function Navbar() {
           {!user?.must_change_password && (
             <div className="hidden md:flex items-center gap-8 font-headline text-sm font-medium">
               <Link 
+                className={`${pathname === '/flights' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
+                href="/flights"
+              >
+                Flights
+              </Link>
+              <Link 
                 className={`${pathname === '/hotels' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
                 href="/hotels"
               >
                 Hotels
+              </Link>
+              <Link 
+                className={`${pathname === '/trains' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
+                href="/trains"
+              >
+                Trains
               </Link>
               <Link 
                 className={`${pathname === '/buses' ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 

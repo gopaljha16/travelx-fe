@@ -94,9 +94,9 @@ export default function MyBizDashboardPage() {
     <div className="bg-background min-h-screen text-on-surface font-body">
       <Navbar />
 
-      <main className="pt-20 pb-24">
+      <main className="pb-24">
         {/* Hero Banner */}
-        <section className="relative overflow-hidden bg-[linear-gradient(135deg,#0f1c2c_0%,#1a3a5f_100%)] px-6 py-16 sm:py-20">
+        <section className="relative overflow-hidden bg-[linear-gradient(135deg,#0f1c2c_0%,#1a3a5f_100%)] px-6 pt-32 pb-16 sm:pt-40 sm:pb-20">
           <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -left-24 bottom-0 h-64 w-64 rounded-full bg-tertiary/10 blur-3xl" />
           <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
