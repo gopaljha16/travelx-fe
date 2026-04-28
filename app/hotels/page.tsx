@@ -59,6 +59,7 @@ function HotelsContent() {
   const [lng, setLng] = useState(searchParams.get("lng") || "");
   const [radiusKm, setRadiusKm] = useState(searchParams.get("radius") || "10");
   const [isLocating, setIsLocating] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   // Date & Guests
   const [date, setDate] = useState("");
@@ -205,13 +206,134 @@ function HotelsContent() {
     guestRating !== undefined,
   ].filter(Boolean).length;
 
+  const Filters = () => (
+    <div className="space-y-8">
+      {/* Property Type */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Property Type</p>
+        <div className="flex flex-wrap gap-2">
+          {["Hotels", "Resorts", "Villis", "Apartments"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setSelectedPropertyType(type)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                selectedPropertyType === type ? "bg-primary border-primary text-white shadow-md shadow-blue-600/10" : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-white"
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Suggested For You */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Suggested For You</p>
+        <div className="space-y-3">
+          {[
+            { label: "Pet Allowed", checked: isPetAllowed, setter: setIsPetAllowed },
+            { label: "Early Check-in Available", checked: isEarlyCheckIn, setter: setIsEarlyCheckIn },
+            { label: "Late Check-out Available", checked: isLateCheckOut, setter: setIsLateCheckOut },
+            { label: "Pay @ Hotel Available", checked: isPayAtHotel, setter: setIsPayAtHotel },
+          ].map((filter) => (
+            <label key={filter.label} className="flex items-center gap-3 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                checked={filter.checked} 
+                onChange={(e) => filter.setter(e.target.checked)}
+                className="w-5 h-5 rounded-md border-2 border-slate-300 text-primary focus:ring-primary transition-all cursor-pointer" 
+              />
+              <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{filter.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Price Range (per night)</p>
+        <div className="space-y-3">
+          {PRICE_RANGES.map((range) => (
+            <button
+              key={range.label}
+              onClick={() => setPriceFilter(range.min, range.max)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold border transition-all flex items-center justify-between group ${
+                minPrice === range.min && maxPrice === range.max ? "bg-blue-50 border-primary text-primary" : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              <span>{range.label}</span>
+              <div className={`w-2 h-2 rounded-full ${minPrice === range.min && maxPrice === range.max ? "bg-primary" : "bg-slate-300 group-hover:bg-slate-400"}`}></div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* User Rating */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">User Rating</p>
+        <div className="grid grid-cols-2 gap-2">
+          {GUEST_RATING_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={() => setGuestRating(guestRating === opt.value ? undefined : opt.value)}
+              className={`px-3 py-2.5 rounded-xl text-[11px] font-black border transition-all text-center ${
+                guestRating === opt.value ? "bg-primary border-primary text-white shadow-lg shadow-blue-600/20 scale-[1.02]" : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-white"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Star Category */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Star Category</p>
+        <div className="flex flex-wrap gap-2">
+          {STAR_OPTIONS.map((star) => (
+            <button
+              key={star}
+              onClick={() => setMinRating(minRating === star ? undefined : star)}
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${
+                minRating === star ? "bg-primary border-primary text-white shadow-lg" : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-white"
+              }`}
+            >
+              <div className="flex flex-col items-center leading-none">
+                <span className="text-sm font-black">{star}</span>
+                <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Amenities */}
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Amenities</p>
+        <div className="grid grid-cols-1 gap-2.5">
+          {AMENITIES.slice(0, 10).map((amenity) => (
+            <label key={amenity} className="flex items-center gap-3 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                checked={selectedAmenities.includes(amenity)} 
+                onChange={() => toggleAmenity(amenity)}
+                className="w-5 h-5 rounded-md border-2 border-slate-300 text-primary focus:ring-primary transition-all cursor-pointer" 
+              />
+              <span className="text-[11px] font-black text-slate-500 group-hover:text-slate-900 transition-colors uppercase tracking-widest">{amenity}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-[#f8f9fc] min-h-screen text-slate-800 font-body">
       <Navbar />
 
       <main className="pt-[50px] pb-20 px-6 max-w-[1400px] mx-auto">
         {/* Search Bar Row */}
-        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mb-8 w-full">
+        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-3 md:gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mb-6 md:mb-8 w-full">
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-inner">
             <span className="material-symbols-outlined text-primary mr-3 font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
               {isLocating ? 'my_location' : 'location_on'}
@@ -226,7 +348,7 @@ function HotelsContent() {
                     setCity(e.target.value); 
                     if (lat || lng) { setLat(""); setLng(""); }
                   }} 
-                  placeholder={isLocating ? "Detecting location..." : (lat && lng ? "Current Location" : "Where to?")} 
+                  placeholder={isLocating ? "Detecting..." : (lat && lng ? "Current Location" : "Where to?")} 
                   className={`bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full ${isLocating ? 'text-primary animate-pulse' : 'text-slate-900'}`}
                 />
                 { lat && !city ? (
@@ -245,7 +367,7 @@ function HotelsContent() {
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-2 group transition-colors w-full shadow-inner relative">
             <span className="material-symbols-outlined text-primary mr-3 font-bold">calendar_month</span>
             <div className="flex flex-col w-full">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Check-in Date</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Dates</label>
               <input 
                 type="date" 
                 value={date}
@@ -272,14 +394,14 @@ function HotelsContent() {
             </div>
           </div>
 
-          <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
-            Search
+          <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-4 md:py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
+            Update
           </button>
         </form>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
-          <aside className="w-full lg:w-[320px] shrink-0">
+          <aside className="hidden lg:block w-[320px] shrink-0">
             {/* Map Block */}
              <div className="bg-slate-100 rounded-2xl h-[160px] relative overflow-hidden mb-6 shadow-sm border border-slate-200 group cursor-pointer" onClick={() => setShowMap(true)}>
                <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
@@ -307,156 +429,38 @@ function HotelsContent() {
                 </h3>
                 <button onClick={clearFilters} className="text-xs font-bold text-primary hover:underline">RESET ALL</button>
               </div>
-
-              {/* Radius Filter (Visible only when 'Near Me' is active) */}
-              {lat && lng && (
-                <div className="mb-6 border-b border-slate-100 pb-6">
-                  <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Distance from me <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                  <div className="space-y-3">
-                    {["5", "10", "20", "50"].map((r) => (
-                      <label key={r} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setRadiusKm(r)}>
-                        <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${radiusKm === r ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
-                        <span className="text-sm font-medium text-slate-600 flex-1">Within {r} km</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Price Per Night */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Price Per Night <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                
-                <div className="space-y-3 mt-4">
-                  {PRICE_RANGES.map((range) => (
-                    <label key={range.label} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(range.min, range.max)}>
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === range.min && maxPrice === range.max ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                        {minPrice === range.min && maxPrice === range.max && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                      </div>
-                      <span className="text-sm font-medium text-slate-600 flex-1">{range.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Star Rating */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Star Rating <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="flex flex-wrap gap-2">
-                  {STAR_OPTIONS.map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setMinRating(minRating === star ? undefined : star)}
-                      className={`py-2 px-4 border rounded-lg text-sm font-bold shadow-sm transition-colors ${minRating === star ? 'bg-primary border-primary text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                    >
-                      {star}★
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Guest Rating */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Guest Rating <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="space-y-3">
-                  {GUEST_RATING_OPTIONS.map((opt) => (
-                    <label key={opt.value} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setGuestRating(guestRating === opt.value ? undefined : opt.value)}>
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${guestRating === opt.value ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                        {guestRating === opt.value && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                      </div>
-                      <span className="text-sm font-medium text-slate-600 flex-1">{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Pet Friendly */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Pet Friendly <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsPetAllowed(!isPetAllowed)}>
-                  <div className={`w-11 h-6 rounded-full flex items-center transition-colors px-0.5 ${isPetAllowed ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
-                    <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform" />
-                  </div>
-                  <span className="text-sm font-medium text-slate-600 flex-1">
-                    {isPetAllowed ? "Only pet-friendly hotels" : "Show all hotels"}
-                  </span>
-                  <span className="material-symbols-outlined text-slate-400 text-[18px]">pets</span>
-                </label>
-              </div>
-
-              {/* Check-in / Check-out Flexibility */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Flexibility <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="space-y-3">
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsEarlyCheckIn(!isEarlyCheckIn)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isEarlyCheckIn ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {isEarlyCheckIn && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">Early Check-in Available</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsLateCheckOut(!isLateCheckOut)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isLateCheckOut ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {isLateCheckOut && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">Late Check-out Available</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Payment Options */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Payment <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setIsPayAtHotel(!isPayAtHotel)}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isPayAtHotel ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                    {isPayAtHotel && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                  </div>
-                  <span className="text-sm font-medium text-slate-600 flex-1">Pay at Hotel</span>
-                  <span className="material-symbols-outlined text-slate-400 text-[18px]">payments</span>
-                </label>
-              </div>
-
-              {/* Amenities */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Amenities <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="space-y-3">
-                  {AMENITIES.map(amenity => (
-                    <label key={amenity} className="flex flex-row items-center gap-3 cursor-pointer group">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedAmenities.includes(amenity) ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                        {selectedAmenities.includes(amenity) && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                      </div>
-                      <span className="text-sm font-medium text-slate-600 flex-1">{amenity}</span>
-                      <input type="checkbox" className="hidden" checked={selectedAmenities.includes(amenity)} onChange={() => toggleAmenity(amenity)} />
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Property Type */}
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Property Type <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="space-y-3">
-                  {["Hotels", "Resorts", "Apartments"].map((type) => (
-                    <label key={type} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setSelectedPropertyType(type)}>
-                      <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${selectedPropertyType === type ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
-                      <span className="text-sm font-medium text-slate-600 flex-1">{type}</span>
-                      {type === "Hotels" && <span className="text-xs text-slate-400">({hotels.length})</span>}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
+              <Filters />
             </div>
           </aside>
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between mb-6">
-              <h1 className="text-[22px] font-headline font-bold text-slate-900">
+            {/* Mobile Filter & Map Toggle */}
+            <div className="lg:hidden flex gap-3 mb-6">
+               <button 
+                onClick={() => setIsFilterModalOpen(true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 py-3.5 rounded-2xl font-bold text-slate-700 shadow-sm active:scale-95 transition-all text-sm"
+               >
+                 <span className="material-symbols-outlined text-primary">filter_list</span>
+                 Filters
+                 {activeFilterCount > 0 && <span className="bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{activeFilterCount}</span>}
+               </button>
+               <button 
+                onClick={() => setShowMap(true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm"
+               >
+                 <span className="material-symbols-outlined">map</span>
+                 Map View
+               </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between mb-6 gap-3">
+              <h1 className="text-lg md:text-[22px] font-headline font-bold text-slate-900">
                 {loading ? "Discovering stays..." : `Showing ${sortedHotels.length} Properties${displayLocation ? ` near ${displayLocation}` : ''}`}
               </h1>
               
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-500 font-medium">Sort by:</span>
+              <div className="flex items-center gap-3 text-sm ml-auto md:ml-0 bg-white md:bg-transparent p-2 md:p-0 rounded-xl md:rounded-none border md:border-none border-slate-100">
+                <span className="text-slate-500 font-medium hidden md:inline">Sort by:</span>
                 <div className="relative flex items-center">
                   <select className="bg-transparent font-bold text-primary outline-none cursor-pointer border-none p-0 pr-6 text-sm tracking-wide appearance-none" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="recommended">Recommended</option>
@@ -470,15 +474,34 @@ function HotelsContent() {
             </div>
 
             {loading ? (
-              <div className="flex min-h-[300px] items-center justify-center bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
-                <Loader2 size={32} className="animate-spin text-primary" />
+              <div className="grid grid-cols-1 gap-4">
+                 {[1,2,3].map(i => (
+                   <div key={i} className="h-[280px] bg-white rounded-2xl border border-slate-100 animate-pulse flex flex-col md:flex-row gap-4 p-4">
+                      <div className="w-full md:w-72 h-48 md:h-full bg-slate-100 rounded-xl shrink-0" />
+                      <div className="flex-1 space-y-4 py-2">
+                        <div className="h-6 bg-slate-100 rounded w-3/4" />
+                        <div className="h-4 bg-slate-100 rounded w-1/2" />
+                        <div className="mt-auto h-10 bg-slate-100 rounded w-full" />
+                      </div>
+                   </div>
+                 ))}
               </div>
             ) : error ? (
-              <div className="p-8 text-center text-sm font-bold text-red-600 bg-red-50 rounded-2xl border border-red-100">{error}</div>
+              <div className="p-12 text-center bg-white rounded-[2rem] border border-red-100">
+                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="material-symbols-outlined text-3xl text-red-500">error</span>
+                 </div>
+                 <h3 className="text-lg font-bold text-red-900">{error}</h3>
+                 <button onClick={() => fetchHotels()} className="mt-4 text-primary font-bold underline">Try again</button>
+              </div>
             ) : sortedHotels.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
-                <h3 className="text-xl font-bold text-slate-900">No properties found</h3>
-                <p className="mt-2 text-sm text-slate-600">Try adjusting your filters or search destination.</p>
+              <div className="p-16 text-center bg-white rounded-[2rem] border border-dashed border-slate-300">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="material-symbols-outlined text-4xl text-slate-300">hotel_class</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900">No rooms available</h3>
+                <p className="mt-2 text-sm text-slate-500 font-medium">We couldn't find any properties matching your criteria. Try expanding your search area or removing filters.</p>
+                <button onClick={clearFilters} className="mt-6 bg-slate-100 text-slate-900 font-bold px-6 py-3 rounded-xl hover:bg-slate-200 transition-all">Clear Filters</button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -489,6 +512,35 @@ function HotelsContent() {
             )}
           </div>
         </div>
+
+        {/* Mobile Filter Modal */}
+        {isFilterModalOpen && (
+          <div className="fixed inset-0 z-[1001] lg:hidden animate-in fade-in transition-all">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)} />
+            <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[2.5rem] shadow-2xl p-6 pb-12 animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-8 sticky top-0 bg-white pb-4 z-10">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Filters</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Refine your search</p>
+                </div>
+                <button onClick={() => setIsFilterModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 active:scale-90 transition-all">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              
+              <Filters />
+              
+              <div className="sticky bottom-0 bg-white pt-4 mt-8">
+                <button 
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all text-sm uppercase tracking-widest"
+                >
+                  Show {sortedHotels.length} Properties
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Map Modal */}

@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Hotel } from "@/lib/api";
 import { BedDouble, Heart, MapPin, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useWishlist } from "@/context/WishlistContext";
 
 export default function HotelCard({ hotel }: { hotel: Hotel }) {
+  const router = useRouter();
   const { user, openLogin } = useAuth();
   const { isInWishlist, toggleWishlistItem } = useWishlist();
   const isWishlisted = isInWishlist(hotel.id);
@@ -39,9 +40,11 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
     if (rating > 0) return "Good";
     return "New Property";
   };
-
   return (
-    <Link href={`/hotels/${hotel.id}`} className="flex bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5 cursor-pointer group block">
+    <div 
+      onClick={() => router.push(`/hotels/${hotel.id}`)} 
+      className="flex bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5 cursor-pointer group"
+    >
       {/* Image Section */}
       <div className="relative w-[320px] shrink-0 h-[220px] rounded-xl overflow-hidden bg-slate-100">
         {hotel.images && hotel.images[0] ? (
@@ -125,6 +128,6 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
           </span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

@@ -27,45 +27,45 @@ const AIRLINES = ["IndiGo", "Air India", "Vistara", "SpiceJet", "Akasa Air"];
 
 function FlightCard({ flight }: { flight: Flight }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200 hover:shadow-lg transition-all group">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center shrink-0">
-            <Plane size={24} />
+    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200 hover:shadow-lg transition-all group">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center shrink-0">
+            <Plane size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-slate-900">{flight.airline}</h3>
-            <p className="text-sm font-semibold text-slate-500">{flight.flight_number}</p>
+            <h3 className="font-bold text-base md:text-lg text-slate-900 leading-tight">{flight.airline}</h3>
+            <p className="text-[12px] md:text-sm font-semibold text-slate-400 md:text-slate-500">{flight.flight_number}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between w-full md:w-auto md:gap-12 pl-16 md:pl-0">
-          <div className="text-center">
-            <p className="font-headline font-black text-xl text-slate-900">{flight.departure_time}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Departure</p>
+        <div className="flex items-center justify-between w-full md:w-auto md:gap-12 py-4 md:py-0 border-y md:border-y-0 border-slate-50">
+          <div className="text-left md:text-center shrink-0">
+            <p className="font-headline font-black text-lg md:text-xl text-slate-900">{flight.departure_time}</p>
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 md:text-slate-500 uppercase tracking-widest mt-1">Departure</p>
           </div>
 
-          <div className="flex flex-col items-center px-4 relative">
-            <p className="text-xs font-bold text-slate-500">{flight.duration}</p>
-            <div className="w-24 h-px bg-slate-300 relative my-3">
-              <span className="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400 text-[16px] bg-white px-2">flight</span>
+          <div className="flex flex-col items-center px-4 relative flex-1 md:flex-none">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 md:text-slate-500">{flight.duration}</p>
+            <div className="w-full md:w-24 h-px bg-slate-200 md:bg-slate-300 relative my-2 md:my-3">
+              <span className="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-400 text-[14px] md:text-[16px] bg-white px-2">flight</span>
             </div>
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Non-stop</p>
+            <p className="text-[10px] text-slate-400 uppercase tracking-tighter md:tracking-widest">Non-stop</p>
           </div>
 
-          <div className="text-center">
-            <p className="font-headline font-black text-xl text-slate-900">{flight.arrival_time}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Arrival</p>
+          <div className="text-right md:text-center shrink-0">
+            <p className="font-headline font-black text-lg md:text-xl text-slate-900">{flight.arrival_time}</p>
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 md:text-slate-500 uppercase tracking-widest mt-1">Arrival</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between w-full md:w-auto md:flex-col md:items-end gap-2 border-t border-slate-100 md:border-t-0 pt-4 md:pt-0">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Price</p>
-            <p className="font-headline font-black text-2xl text-slate-900 text-right">₹{flight.price}</p>
+        <div className="flex items-center justify-between w-full md:w-auto md:flex-col md:items-end gap-2 md:pt-0">
+          <div className="md:text-right">
+            <p className="text-[10px] md:text-xs font-bold text-slate-400 md:text-slate-500 uppercase tracking-widest leading-none mb-1">Price</p>
+            <p className="font-headline font-black text-xl md:text-2xl text-slate-900 leading-none">₹{flight.price}</p>
           </div>
-          <button className="bg-primary hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl transition-colors shadow-md text-sm">
-            Book Now
+          <button className="bg-primary hover:bg-blue-700 text-white font-black px-6 py-2.5 rounded-xl transition-all shadow-md text-[13px] active:scale-95">
+            Book
           </button>
         </div>
       </div>
@@ -88,6 +88,7 @@ function FlightsContent() {
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [selectedAirline, setSelectedAirline] = useState<string | undefined>();
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [sortBy, setSortBy] = useState("recommended");
 
@@ -153,23 +154,59 @@ function FlightsContent() {
     router.push(`/flights?${params.toString()}`);
   };
 
+  const Filters = () => (
+    <div className="space-y-8">
+      {/* Price */}
+      <div className="border-b border-slate-100 pb-6">
+        <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Budget <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3 mt-4">
+          {[
+            { label: "₹ 0 - ₹ 4500", min: 0, max: 4500 },
+            { label: "₹ 4500 - ₹ 6000", min: 4500, max: 6000 },
+            { label: "₹ 6000+", min: 6000, max: undefined }
+          ].map((range) => (
+            <label key={range.label} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${minPrice === range.min && maxPrice === range.max ? 'bg-blue-50 border-blue-200 text-primary' : 'bg-slate-50 border-slate-100 text-slate-600'}`} onClick={() => setPriceFilter(range.min, range.max)}>
+              <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${minPrice === range.min && maxPrice === range.max ? 'bg-primary border-primary' : 'border-slate-300'}`}>
+                {minPrice === range.min && maxPrice === range.max && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+              </div>
+              <span className="text-sm font-bold">{range.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Airlines */}
+      <div>
+        <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Airlines <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 mt-4">
+          {AIRLINES.map(airline => (
+             <label key={airline} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedAirline === airline ? 'bg-blue-50 border-blue-200 text-primary' : 'bg-slate-50 border-slate-100 text-slate-600'}`} onClick={() => setSelectedAirline(selectedAirline === airline ? undefined : airline)}>
+               <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center shrink-0 ${selectedAirline === airline ? 'border-primary' : 'border-slate-300'}`}></div>
+               <span className="text-sm font-bold truncate">{airline}</span>
+             </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-[#f8f9fc] min-h-screen text-slate-800 font-body">
       <Navbar />
 
-      <main className="pt-[50px] pb-20 px-6 max-w-[1400px] mx-auto">
+      <main className="pt-6 md:pt-[50px] pb-20 px-4 md:px-6 max-w-[1400px] mx-auto">
         {/* Search Bar Row */}
-        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mb-8 w-full">
+        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-3 md:gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mb-6 md:mb-8 w-full">
           
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-inner">
             <span className="material-symbols-outlined text-primary mr-3 font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>flight_takeoff</span>
             <div className="flex flex-col w-full relative">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Leaving From</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">From</label>
               <input 
                 type="text" 
                 value={fromCity} 
                 onChange={(e) => setFromCity(e.target.value)} 
-                placeholder="City or Airport"
+                placeholder="Airport"
                 className="bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full text-slate-900"
               />
             </div>
@@ -178,12 +215,12 @@ function FlightsContent() {
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-inner">
             <span className="material-symbols-outlined text-primary mr-3 font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>flight_land</span>
             <div className="flex flex-col w-full relative">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Going To</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">To</label>
               <input 
                 type="text" 
                 value={toCity} 
                 onChange={(e) => setToCity(e.target.value)} 
-                placeholder="Everywhere"
+                placeholder="Airport"
                 className="bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full text-slate-900"
               />
             </div>
@@ -192,7 +229,7 @@ function FlightsContent() {
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-2 group transition-colors w-full shadow-inner relative">
             <span className="material-symbols-outlined text-primary mr-3 font-bold">calendar_month</span>
             <div className="flex flex-col w-full">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Departure Date</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Date</label>
               <input 
                 type="date" 
                 value={journeyDate}
@@ -202,72 +239,49 @@ function FlightsContent() {
             </div>
           </div>
 
-          <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
-            Search Flights
+          <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-4 md:py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
+            Update
           </button>
         </form>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-[320px] shrink-0">
+          
+          {/* Mobile Filter Toggle */}
+          <div className="lg:hidden flex gap-3 mb-6">
+             <button 
+              onClick={() => setIsFilterModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 py-3.5 rounded-2xl font-bold text-slate-700 shadow-sm active:scale-95 transition-all text-sm"
+             >
+               <span className="material-symbols-outlined text-primary">filter_list</span>
+               Filters
+               {(minPrice !== undefined || selectedAirline) && <span className="bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">1</span>}
+             </button>
+             <div className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 py-3.5 rounded-2xl font-bold text-slate-700 shadow-sm transition-all text-sm">
+               <span className="material-symbols-outlined text-primary">swap_vert</span>
+               Sort
+             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
+          {/* Sidebar Filters - Desktop */}
+          <aside className="hidden lg:block w-[320px] shrink-0">
+            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-headline font-bold text-slate-900 uppercase tracking-widest text-sm">Filters</h3>
                 <button onClick={clearFilters} className="text-xs font-bold text-primary hover:underline">RESET ALL</button>
               </div>
-
-              {/* Price */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Price <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                
-                <div className="space-y-3 mt-4">
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(0, 4500)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 0 && maxPrice === 4500 ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 0 && maxPrice === 4500 && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 0 - ₹ 4500</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(4500, 6000)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 4500 && maxPrice === 6000 ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 4500 && maxPrice === 6000 && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 4500 - ₹ 6000</span>
-                  </label>
-                  <label className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setPriceFilter(6000, undefined)}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${minPrice === 6000 && maxPrice === undefined ? 'bg-primary border-primary' : 'border-slate-300 group-hover:border-primary'}`}>
-                      {minPrice === 6000 && maxPrice === undefined && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 flex-1">₹ 6000+</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Airlines */}
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 mb-4 flex justify-between cursor-pointer">Airlines <span className="material-symbols-outlined text-slate-400 text-sm">expand_less</span></h4>
-                <div className="space-y-3">
-                  {AIRLINES.map(airline => (
-                     <label key={airline} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => setSelectedAirline(selectedAirline === airline ? undefined : airline)}>
-                       <div className={`w-5 h-5 rounded-full border-[5px] flex items-center justify-center transition-colors ${selectedAirline === airline ? 'border-primary' : 'border-slate-300 group-hover:border-primary'}`}></div>
-                       <span className="text-sm font-medium text-slate-600 flex-1">{airline}</span>
-                     </label>
-                  ))}
-                </div>
-              </div>
-
+              <Filters />
             </div>
           </aside>
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between mb-6">
-               <h1 className="text-[22px] font-headline font-bold text-slate-900">
+            <div className="flex flex-wrap items-center justify-between mb-6 gap-3">
+               <h1 className="text-lg md:text-[22px] font-headline font-bold text-slate-900">
                 {loading ? "Finding available flights..." : `${sortedFlights.length} Flights Available`}
               </h1>
               
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-500 font-medium">Sort by:</span>
+              <div className="flex items-center gap-3 text-sm ml-auto md:ml-0 bg-white md:bg-transparent p-2 md:p-0 rounded-xl md:rounded-none border md:border-none border-slate-100">
+                <span className="text-slate-500 font-medium hidden md:inline">Sort by:</span>
                 <div className="relative flex items-center">
                   <select className="bg-transparent font-bold text-primary outline-none cursor-pointer border-none p-0 pr-6 text-sm tracking-wide appearance-none" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="recommended">Recommended</option>
@@ -281,13 +295,19 @@ function FlightsContent() {
             </div>
 
             {loading ? (
-              <div className="flex min-h-[300px] items-center justify-center bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
-                <Loader2 size={32} className="animate-spin text-primary" />
+              <div className="space-y-4">
+                 {[1,2,3].map(i => (
+                   <div key={i} className="h-32 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+                 ))}
               </div>
             ) : sortedFlights.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-slate-200">
-                <h3 className="text-xl font-bold text-slate-900">No flights found</h3>
-                <p className="mt-2 text-sm text-slate-600">Try adjusting your filters or search destination.</p>
+              <div className="p-16 text-center bg-white rounded-[2rem] border border-dashed border-slate-300">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-3xl text-slate-300">flight_takeoff</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900">No flights found</h3>
+                <p className="mt-2 text-sm text-slate-500 font-medium">Try adjusting your filters or destination.</p>
+                <button onClick={clearFilters} className="mt-6 text-primary font-bold underline">Clear filters</button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -298,6 +318,32 @@ function FlightsContent() {
             )}
           </div>
         </div>
+
+        {/* Mobile Filter Modal */}
+        {isFilterModalOpen && (
+          <div className="fixed inset-0 z-[1001] lg:hidden animate-in fade-in transition-all">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)} />
+            <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[2.5rem] shadow-2xl p-6 pb-12 animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-8 sticky top-0 bg-white pb-4 z-10">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Filters</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Refine flight options</p>
+                </div>
+                <button onClick={() => setIsFilterModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 active:scale-90 transition-all">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <Filters />
+              <div className="h-10" />
+              <button 
+                onClick={() => setIsFilterModalOpen(false)}
+                className="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all text-sm uppercase tracking-widest"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
     </div>

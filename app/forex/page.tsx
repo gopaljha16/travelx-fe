@@ -91,76 +91,76 @@ function QuoteCard({ provider, amount, targetCurrency }: { provider: ForexProvid
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_15px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden mb-5 hover:border-blue-500 transition-colors duration-300">
       <div className="p-5">
-        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
+        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 lg:gap-6">
           
           {/* Provider Identity */}
           <div className="flex items-center gap-4 w-full lg:w-1/3">
-            <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${provider.logoColor} text-white flex items-center justify-center font-black text-xl shadow-inner shrink-0`}>
+            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br ${provider.logoColor} text-white flex items-center justify-center font-black text-lg md:text-xl shadow-inner shrink-0`}>
               {provider.logoText}
             </div>
             <div>
-              <h3 className="font-bold text-xl text-slate-900 leading-tight">{provider.provider_name}</h3>
+              <h3 className="font-bold text-lg md:text-xl text-slate-900 leading-tight">{provider.provider_name}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <div className="flex items-center bg-[#00a19c] text-white px-1.5 py-0.5 rounded text-[11px] font-bold">
-                  {provider.rating} <span className="material-symbols-outlined text-[11px] ml-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <div className="flex items-center bg-[#00a19c] text-white px-1.5 py-0.5 rounded text-[10px] md:text-[11px] font-bold">
+                  {provider.rating} <span className="material-symbols-outlined text-[10px] md:text-[11px] ml-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                 </div>
                 <span className="text-[12px] font-bold text-slate-400">•</span>
-                <span className="text-[12px] font-bold text-slate-500">{provider.provider_type}</span>
+                <span className="text-[12px] font-bold text-slate-500 line-clamp-1">{provider.provider_type}</span>
               </div>
             </div>
           </div>
 
           {/* Product Toggle (Forex Card vs Cash) */}
-          <div className="w-full lg:w-1/3 border-l border-r border-slate-100 px-0 lg:px-6">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Select Product</p>
-            <div className="space-y-2">
+          <div className="w-full lg:w-1/3 border-y lg:border-y-0 lg:border-l lg:border-r border-slate-100 py-4 lg:py-0 px-0 lg:px-6">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Select Product</p>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
               {provider.quotes.map((quote, idx) => (
                 <div 
                   key={idx} 
                   onClick={() => setSelectedProductIdx(idx)}
-                  className={`flex justify-between items-center p-2.5 rounded-xl cursor-pointer transition-all border ${selectedProductIdx === idx ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                  className={`flex justify-between items-center p-2 md:p-2.5 rounded-xl cursor-pointer transition-all border ${selectedProductIdx === idx ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedProductIdx === idx ? 'border-blue-600' : 'border-slate-300'}`}>
-                      {selectedProductIdx === idx && <div className="w-2 h-2 rounded-full bg-blue-600"></div>}
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <div className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedProductIdx === idx ? 'border-blue-600' : 'border-slate-300'}`}>
+                      {selectedProductIdx === idx && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-600"></div>}
                     </div>
-                    <span className={`font-bold text-sm ${selectedProductIdx === idx ? 'text-blue-900' : 'text-slate-700'}`}>
+                    <span className={`font-bold text-[11px] md:text-sm truncate ${selectedProductIdx === idx ? 'text-blue-900' : 'text-slate-700'}`}>
                       {quote.type}
                     </span>
                   </div>
-                  <span className="text-xs font-black text-slate-900">₹{quote.rate.toFixed(2)}</span>
+                  <span className="text-[10px] md:text-xs font-black text-slate-900 whitespace-nowrap">₹{quote.rate.toFixed(2)}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Checkout Info */}
-          <div className="w-full lg:w-1/3 text-right flex flex-col justify-between h-full">
+          <div className="w-full lg:w-1/3 text-left lg:text-right flex flex-col justify-between h-full">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Payable (INR)</p>
-              <div className="flex items-end justify-end gap-2">
-                <span className="font-black text-3xl text-slate-900 tracking-tight">
+              <p className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Payable (INR)</p>
+              <div className="flex items-end justify-start lg:justify-end gap-2">
+                <span className="font-black text-2xl md:text-3xl text-slate-900 tracking-tight">
                   ₹{totalInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </span>
               </div>
               
-              <div className="flex justify-end gap-2 mt-2">
+              <div className="flex justify-start lg:justify-end gap-2 mt-2">
                 {activeQuote.fees === 0 ? (
-                  <span className="text-[11px] font-bold bg-[#e3fff2] text-[#00a19c] px-2 py-1 rounded-md">Zero Markup Fees</span>
+                  <span className="text-[10px] md:text-[11px] font-bold bg-[#e3fff2] text-[#00a19c] px-2 py-1 rounded-md">Zero Markup Fees</span>
                 ) : (
-                  <span className="text-[11px] font-medium text-slate-500">Includes ₹{activeQuote.fees} charges</span>
+                  <span className="text-[10px] md:text-[11px] font-medium text-slate-500">Includes ₹{activeQuote.fees} charges</span>
                 )}
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3 justify-end items-center">
-              <div className="text-right mr-2">
-                <p className="text-[12px] font-bold text-slate-800">{activeQuote.deliveryTime}</p>
-                <p className={`text-[11px] font-bold ${activeQuote.statusColor}`}>{activeQuote.status}</p>
-              </div>
-              <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-md active:scale-95 text-sm uppercase tracking-wider">
+            <div className="mt-6 flex flex-row-reverse lg:flex-row gap-3 justify-between lg:justify-end items-center">
+              <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold px-6 md:px-8 py-3 md:py-3.5 rounded-xl transition-all shadow-md active:scale-95 text-xs md:text-sm uppercase tracking-wider">
                 Book Rate
               </button>
+              <div className="text-left lg:text-right">
+                <p className="text-[11px] md:text-[12px] font-bold text-slate-800">{activeQuote.deliveryTime}</p>
+                <p className={`text-[10px] md:text-[11px] font-bold ${activeQuote.statusColor}`}>{activeQuote.status}</p>
+              </div>
             </div>
           </div>
 
@@ -198,6 +198,7 @@ function ForexContent() {
   // Sidebar Filter State
   const [selectedProviderTypes, setSelectedProviderTypes] = useState<string[]>([]);
   const [selectedDeliveryMethods, setSelectedDeliveryMethods] = useState<string[]>([]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const fetchForex = useCallback(async () => {
     setLoading(true);
@@ -234,6 +235,46 @@ function ForexContent() {
   const toggleDeliveryMethod = (method: string) => {
     setSelectedDeliveryMethods(prev => prev.includes(method) ? prev.filter(m => m !== method) : [...prev, method]);
   };
+
+  const Filters = () => (
+    <div className="space-y-8">
+      {/* Provider Category */}
+      <div className="border-b border-slate-100 pb-6">
+        <h4 className="font-bold text-[13px] text-slate-900 mb-4 h-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-blue-600 text-lg">account_balance</span>
+          Service Provider
+        </h4>
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 mt-4">
+          {["Bank", "Agency"].map(type => (
+            <label key={type} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedProviderTypes.includes(type) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-100 text-slate-600 hover:border-blue-200'}`} onClick={() => toggleProviderType(type)}>
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${selectedProviderTypes.includes(type) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white'}`}>
+                {selectedProviderTypes.includes(type) && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+              </div>
+              <span className="text-sm font-bold flex-1">{type}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Delivery Methods */}
+      <div>
+        <h4 className="font-bold text-[13px] text-slate-900 mb-4 h-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-blue-600 text-lg">local_shipping</span>
+          Delivery Need
+        </h4>
+        <div className="grid grid-cols-1  gap-3">
+          {["Doorstep Delivery", "Branch Pickup"].map(method => (
+             <label key={method} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedDeliveryMethods.includes(method) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-100 text-slate-600 hover:border-blue-200'}`} onClick={() => toggleDeliveryMethod(method)}>
+               <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${selectedDeliveryMethods.includes(method) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white'}`}>
+                 {selectedDeliveryMethods.includes(method) && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+               </div>
+               <span className="text-sm font-bold flex-1">{method}</span>
+             </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-[#f4f7f9] min-h-screen text-slate-800 font-body pb-20">
@@ -318,67 +359,84 @@ function ForexContent() {
         </div>
       </div>
 
-      <main className="pt-10 max-w-7xl mx-auto px-6">
+      <main className="pt-6 md:pt-10 max-w-7xl mx-auto px-4 md:px-6">
+        
+        {/* Mobile Filter Button */}
+        <div className="lg:hidden flex items-center justify-between mb-6 gap-4">
+          <button 
+            onClick={() => setIsFilterModalOpen(true)}
+            className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 py-3.5 rounded-xl font-bold text-slate-700 shadow-sm active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-blue-600">filter_list</span>
+            Sort & Filter
+            {(selectedProviderTypes.length + selectedDeliveryMethods.length) > 0 && (
+              <span className="bg-blue-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                {selectedProviderTypes.length + selectedDeliveryMethods.length}
+              </span>
+            )}
+          </button>
+          
+          <div className="flex-1 bg-white border border-slate-200 py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 shadow-sm">
+            <span className="material-symbols-outlined text-blue-600">swap_vert</span>
+            Recommend
+          </div>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
           
-          {/* Sidebar */}
-          <aside className="w-full lg:w-[280px] shrink-0">
+          {/* Sidebar - Desktop only */}
+          <aside className="hidden lg:block w-[280px] shrink-0">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-headline font-bold text-slate-900 uppercase tracking-widest text-sm">Filter Quotes</h3>
               </div>
-
-              {/* Provider Category */}
-              <div className="mb-6 border-b border-slate-100 pb-6">
-                <h4 className="font-bold text-[13px] text-slate-900 mb-4">Service Provider</h4>
-                <div className="space-y-3 mt-4">
-                  {["Bank", "Agency"].map(type => (
-                    <label key={type} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => toggleProviderType(type)}>
-                      <div className={`w-5 h-5 rounded-[6px] border flex items-center justify-center transition-colors ${selectedProviderTypes.includes(type) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 group-hover:border-blue-600 bg-slate-50'}`}>
-                        {selectedProviderTypes.includes(type) && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                      </div>
-                      <span className="text-sm font-bold text-slate-600 flex-1">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Delivery Methods */}
-              <div>
-                <h4 className="font-bold text-[13px] text-slate-900 mb-4">Delivery Need</h4>
-                <div className="space-y-3">
-                  {["Doorstep Delivery", "Branch Pickup"].map(method => (
-                     <label key={method} className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => toggleDeliveryMethod(method)}>
-                       <div className={`w-5 h-5 rounded-[6px] border flex items-center justify-center transition-colors ${selectedDeliveryMethods.includes(method) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 group-hover:border-blue-600 bg-slate-50'}`}>
-                         {selectedDeliveryMethods.includes(method) && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
-                       </div>
-                       <span className="text-sm font-bold text-slate-600 flex-1">{method}</span>
-                     </label>
-                  ))}
-                </div>
-              </div>
+              <Filters />
             </div>
           </aside>
 
           {/* Main Content Area */}
           <div className="flex-1">
-            <h2 className="text-xl font-headline font-black text-slate-900 mb-6">
-              {loading ? "Searching for the best exchange rates..." : `Showing ${providers.length} Quotes for ${amount} ${targetCurrency}`}
-            </h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
+              <h2 className="text-lg md:text-xl font-headline font-black text-slate-900">
+                {loading ? "Searching exchange rates..." : `Showing ${providers.length} Quotes for ${amount} ${targetCurrency}`}
+              </h2>
+              {!loading && providers.length > 0 && (
+                 <div className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                   <span className="material-symbols-outlined text-sm">schedule</span>
+                   Rates valid for 19:42 min
+                 </div>
+              )}
+            </div>
 
             {loading ? (
-              <div className="flex min-h-[300px] flex-col gap-4 items-center justify-center bg-white rounded-2xl border border-slate-200">
-                <Loader2 size={32} className="animate-spin text-blue-600" />
-                <p className="text-sm font-bold text-slate-500 animate-pulse">Contacting Banking Partners...</p>
+              <div className="flex min-h-[300px] flex-col gap-4 items-center justify-center bg-white rounded-2xl border border-slate-200 px-6 text-center">
+                <div className="relative">
+                   <Loader2 size={40} className="animate-spin text-blue-600" />
+                   <div className="absolute inset-0 flex items-center justify-center">
+                     <span className="material-symbols-outlined text-blue-200 text-xl">currency_exchange</span>
+                   </div>
+                </div>
+                <div>
+                  <p className="text-base font-black text-slate-900">Fetching Real-time Quotes</p>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Comparing Thomas Cook, HDFC, and more...</p>
+                </div>
               </div>
             ) : providers.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-                <span className="material-symbols-outlined text-5xl text-slate-300 mb-2">search_off</span>
-                <h3 className="text-xl font-bold text-slate-900">No matching providers found</h3>
-                <p className="mt-2 text-sm text-slate-500 font-medium">Try removing some filters to see available quotes.</p>
+              <div className="p-12 text-center bg-white rounded-[2rem] border border-dashed border-slate-300">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="material-symbols-outlined text-4xl text-slate-300">search_off</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900">No matching providers</h3>
+                <p className="mt-2 text-sm text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or currency amount to see available exchange options.</p>
+                <button 
+                  onClick={() => { setSelectedProviderTypes([]); setSelectedDeliveryMethods([]); }}
+                  className="mt-6 text-blue-600 font-bold underline text-sm"
+                >
+                  Clear all filters
+                </button>
               </div>
             ) : (
-              <div>
+              <div className="space-y-4">
                 {providers.map((p) => (
                   <QuoteCard key={p.id} provider={p} amount={amount} targetCurrency={targetCurrency} />
                 ))}
@@ -386,10 +444,13 @@ function ForexContent() {
             )}
             
             {!loading && providers.length > 0 && (
-               <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 p-4 rounded-xl mt-6">
-                 <span className="material-symbols-outlined text-blue-600 text-xl">info</span>
+               <div className="flex items-start gap-4 bg-blue-50/50 border border-blue-100 p-5 rounded-2xl mt-8">
+                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-blue-600 text-xl">info</span>
+                 </div>
                  <p className="text-[13px] text-blue-900 font-medium leading-relaxed">
-                   Exchange rates are subject to change. Rates displayed lock in for 30 minutes upon clicking "Book Rate". Final documentation such as PAN Card and Passport are required at checkout.
+                   <span className="font-bold block mb-1">Exchange Rate Information</span>
+                   Exchange rates are subject to slight market fluctuations. Rates displayed can be locked in for 30 minutes upon clicking "Book Rate". Required documents: PAN Card and Passport scan.
                  </p>
                </div>
             )}
@@ -397,6 +458,32 @@ function ForexContent() {
         </div>
       </main>
 
+      {/* Mobile Filter Modal */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-[1001] lg:hidden animate-in fade-in transition-all">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)} />
+          <div className="absolute bottom-0 left-0 w-full bg-white rounded-t-[2.5rem] shadow-2xl p-6 pb-12 animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Filter Quotes</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Refine your search</p>
+              </div>
+              <button onClick={() => setIsFilterModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 active:scale-90 transition-all">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <Filters />
+            
+            <button 
+              onClick={() => setIsFilterModalOpen(false)}
+              className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl mt-8 shadow-xl shadow-blue-600/20 active:scale-95 transition-all text-sm uppercase tracking-widest"
+            >
+              Show {providers.length} Quotes
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
