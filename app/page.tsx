@@ -163,7 +163,7 @@ export default function HomePage() {
             </div>
 
             {/* Central Search Card */}
-            <div className="bg-surface-container-lowest rounded-3xl shadow-2xl p-2 md:p-4 border border-outline-variant/10">
+            <div className="bg-surface-container-lowest rounded-3xl shadow-2xl p-3 md:p-6 border border-outline-variant/10">
               {/* Tabs */}
               <div className="flex gap-2 mb-4 p-1 bg-surface-container-low w-fit rounded-2xl mx-auto md:mx-0 overflow-x-auto no-scrollbar max-w-full">
                 <button 
@@ -416,23 +416,23 @@ export default function HomePage() {
                       unoptimized
                     />
                   </div>
-                  <div className="p-8 flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> {hotels[0].rating} (2.4k reviews)
+                  <div className="p-6 md:p-8 flex flex-col sm:flex-row justify-between items-start gap-6 sm:gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> {hotels[0].rating}
                         </span>
-                        <span className="bg-tertiary/10 text-tertiary px-3 py-1 rounded-full text-xs font-bold">1.2 km away</span>
+                        <span className="bg-tertiary/10 text-tertiary px-3 py-1 rounded-full text-[10px] font-bold">1.2 km away</span>
                       </div>
-                      <h3 className="font-headline text-2xl font-bold text-on-surface">{hotels[0].name}</h3>
-                      <p className="text-on-surface-variant flex items-center gap-1 mt-1">
-                        <span className="material-symbols-outlined text-base">location_on</span> {hotels[0].city}, {hotels[0].address}
+                      <h3 className="font-headline text-xl md:text-3xl font-bold text-on-surface leading-tight">{hotels[0].name}</h3>
+                      <p className="text-on-surface-variant flex items-center gap-1 mt-1.5 text-sm">
+                        <span className="material-symbols-outlined text-base">location_on</span> {hotels[0].city}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-on-surface-variant text-xs font-medium line-through">₹{(hotels[0].price_per_night * 1.2).toFixed(0)}</span>
-                      <div className="text-primary font-headline text-3xl font-extrabold">₹{hotels[0].price_per_night}<span className="text-sm font-normal text-on-surface-variant">/night</span></div>
-                      <button className="mt-4 px-6 py-2.5 bg-on-surface text-surface rounded-xl font-bold text-sm hover:bg-primary transition-colors">Book Now</button>
+                    <div className="text-right w-full sm:w-auto border-t sm:border-t-0 border-outline-variant/10 pt-4 sm:pt-0">
+                      <span className="text-on-surface-variant text-[10px] font-medium line-through">₹{(hotels[0].price_per_night * 1.2).toFixed(0)}</span>
+                      <div className="text-primary font-headline text-2xl md:text-4xl font-extrabold leading-none">₹{hotels[0].price_per_night}<span className="text-xs font-normal text-on-surface-variant">/night</span></div>
+                      <button className="mt-4 w-full sm:w-auto px-8 py-3 bg-on-surface text-surface rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary transition-colors shadow-lg">Book Now</button>
                     </div>
                   </div>
                 </Link>

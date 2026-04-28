@@ -193,6 +193,7 @@ export default function Navbar() {
                   <Link 
                     key={link.href} 
                     href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all group ${
                       pathname === link.href ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100/50' : 'text-slate-600 hover:bg-slate-50'
                     }`}
@@ -215,14 +216,14 @@ export default function Navbar() {
             <section>
               <p className="px-2 text-[10px] font-black text-slate-400 uppercase tracking-[.25em] mb-5">Personalization</p>
               <div className="grid gap-2.5">
-                <Link href="/bookings" className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
+                <Link href="/bookings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
                   <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-amber-500 shadow-inner group-hover:shadow-sm transition-all text-xl">
                     <span className="material-symbols-outlined text-[24px]">luggage</span>
                   </div>
                   <span className="text-[15px] tracking-tight">Trip History</span>
                 </Link>
                 
-                <Link href="/profile/wishlist" className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
+                <Link href="/profile/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
                   <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-pink-500 shadow-inner group-hover:shadow-sm transition-all text-xl">
                     <span className="material-symbols-outlined text-[24px]">favorite</span>
                   </div>
@@ -231,7 +232,7 @@ export default function Navbar() {
                 </Link>
                 
                 {user?.corporate_role === 'admin' && (
-                  <Link href="/mybiz" className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-blue-700 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 transition-all shadow-sm group">
+                  <Link href="/mybiz" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-blue-700 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 transition-all shadow-sm group">
                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
                         <Briefcase size={22} />
                      </div>

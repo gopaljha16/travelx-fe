@@ -114,34 +114,36 @@ export default function HotelDetailPage() {
 
       <main className="pt-20 pb-40">
         {/* ── GALLERY BENTO ─────────────────────────────────────── */}
-        <div className="max-w-7xl mx-auto px-6 pt-6 mb-10">
-          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px] rounded-2xl overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-auto md:h-[480px] rounded-2xl overflow-hidden">
             {/* Large primary image */}
-            <div className="col-span-2 row-span-2 relative group overflow-hidden bg-slate-200">
+            <div className="md:col-span-2 md:row-span-2 aspect-video md:aspect-auto relative group overflow-hidden bg-slate-200">
               {hotel.images?.[0]
                 ? <Image src={hotel.images[0]} alt={hotel.name} fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                : <div className="flex h-full items-center justify-center text-slate-300"><BedDouble size={72} /></div>}
+                : <div className="flex h-full items-center justify-center text-slate-300 min-h-[250px] md:min-h-0"><BedDouble size={72} /></div>}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="md:hidden absolute bottom-4 left-4 text-white font-bold">1/{hotel.images?.length || 1} Photos</div>
             </div>
 
-            {[1, 2, 3].map(i => (
-              <div key={i} className="relative group overflow-hidden bg-slate-200">
-                {hotel.images?.[i]
-                  ? <Image src={hotel.images[i]} alt={`${hotel.name} ${i + 1}`} fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                  : <div className="flex h-full items-center justify-center text-slate-300"><BedDouble size={36} /></div>}
-              </div>
-            ))}
+            <div className="hidden md:grid md:col-start-3 md:col-end-5 md:row-start-1 md:row-end-3 grid-cols-2 grid-rows-2 gap-3 h-full">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="relative group overflow-hidden bg-slate-200">
+                  {hotel.images?.[i]
+                    ? <Image src={hotel.images[i]} alt={`${hotel.name} ${i + 1}`} fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                    : <div className="flex h-full items-center justify-center text-slate-300"><BedDouble size={36} /></div>}
+                </div>
+              ))}
 
-            {/* Last tile — image + overlay button */}
-            <div className="relative group overflow-hidden bg-slate-200">
-              {hotel.images?.[4]
-                ? <Image src={hotel.images[4]} alt={`${hotel.name} 5`} fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                : <div className="flex h-full items-center justify-center text-slate-300"><BedDouble size={36} /></div>}
-              <div className="absolute inset-0 bg-black/20" />
-              <button className="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg hover:bg-white transition-all">
-                <span className="material-symbols-outlined text-[18px]">grid_view</span>
-                View all photos
-              </button>
+              {/* Last tile — image + overlay button */}
+              <div className="relative group overflow-hidden bg-slate-200">
+                {hotel.images?.[4]
+                  ? <Image src={hotel.images[4]} alt={`${hotel.name} 5`} fill unoptimized className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                  : <div className="flex h-full items-center justify-center text-slate-300"><BedDouble size={36} /></div>}
+                <div className="absolute inset-0 bg-black/20" />
+                <button className="absolute inset-0 flex items-center justify-center bg-black/30 text-white font-bold text-sm">
+                  +{Math.max(0, (hotel.images?.length || 0) - 4)} Photos
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -520,9 +522,9 @@ export default function HotelDetailPage() {
             <button
               onClick={goToBooking}
               disabled={totalNights <= 0}
-              className="bg-[#005cab] hover:bg-[#004786] disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-[#005cab]/20 active:scale-95 transition-all"
+              className="bg-[#005cab] hover:bg-[#004786] disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-6 md:px-10 py-3 rounded-xl font-bold shadow-lg shadow-[#005cab]/20 active:scale-95 transition-all text-xs md:text-base whitespace-nowrap"
             >
-              {totalNights <= 0 ? "Select Dates First" : "Book This Stay"}
+              {totalNights <= 0 ? "Select Dates" : "Book This Stay"}
             </button>
           </div>
         </div>
