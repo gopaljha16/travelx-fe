@@ -1,0 +1,271 @@
+[{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34d"
+  },
+  "name": "SRS Travels Super Deluxe",
+  "from_city": "Bangalore",
+  "to_city": "Goa",
+  "departure_time": "20:30",
+  "arrival_time": "08:30",
+  "journey_date": "2026-04-17",
+  "total_seats": 40,
+  "price_per_seat": 1100,
+  "bus_type": "Non-AC Sleeper",
+  "amenities": [
+    "Blanket",
+    "Charging Point",
+    "Spacious Berths"
+  ],
+  "images": [
+    "/assets/buses/bus3.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000003",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae348"
+  },
+  "name": "Zingbus Premium Volvo",
+  "from_city": "Delhi",
+  "to_city": "Jaipur",
+  "departure_time": "22:30",
+  "arrival_time": "04:30",
+  "journey_date": "2026-04-18",
+  "total_seats": 40,
+  "price_per_seat": 850,
+  "bus_type": "AC Sleeper",
+  "amenities": [
+    "Free WiFi",
+    "Charging Point",
+    "Water Bottle",
+    "Blanket",
+    "Emergency Exit",
+    "CCTV"
+  ],
+  "images": [
+    "/assets/buses/bus1.png",
+    "/assets/buses/bus2.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000001",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae350"
+  },
+  "name": "Greenline Sleeper",
+  "from_city": "Kolkata",
+  "to_city": "Darjeeling",
+  "departure_time": "19:00",
+  "arrival_time": "08:00",
+  "journey_date": "2026-04-18",
+  "total_seats": 30,
+  "price_per_seat": 1450,
+  "bus_type": "AC Sleeper",
+  "amenities": [
+    "WiFi",
+    "Blanket",
+    "Water",
+    "CCTV"
+  ],
+  "images": [
+    "/assets/buses/bus3.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000005",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae349"
+  },
+  "name": "IntrCity SmartBus",
+  "from_city": "Delhi",
+  "to_city": "Jaipur",
+  "departure_time": "08:00",
+  "arrival_time": "14:00",
+  "journey_date": "2026-04-17",
+  "total_seats": 36,
+  "price_per_seat": 650,
+  "bus_type": "AC Seater",
+  "amenities": [
+    "Live Tracking",
+    "WiFi",
+    "Charging Point",
+    "CCTV",
+    "Snacks"
+  ],
+  "images": [
+    "/assets/buses/bus2.png",
+    "/assets/buses/bus3.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000001",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34c"
+  },
+  "name": "KSRTC Ambari Dream Class",
+  "from_city": "Bangalore",
+  "to_city": "Goa",
+  "departure_time": "21:00",
+  "arrival_time": "09:00",
+  "journey_date": "2026-04-18",
+  "total_seats": 30,
+  "price_per_seat": 1550,
+  "bus_type": "AC Sleeper",
+  "amenities": [
+    "WiFi",
+    "High Speed USB Port",
+    "Emergency Exit",
+    "Water Bottle"
+  ],
+  "images": [
+    "/assets/buses/bus2.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000003",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34a"
+  },
+  "name": "Shivneri State Express",
+  "from_city": "Mumbai",
+  "to_city": "Pune",
+  "departure_time": "06:00",
+  "arrival_time": "09:30",
+  "journey_date": "2026-04-17",
+  "total_seats": 45,
+  "price_per_seat": 450,
+  "bus_type": "AC Seater",
+  "amenities": [
+    "Charging Point",
+    "Newspaper",
+    "Comfortable Seats",
+    "Professional Driver"
+  ],
+  "images": [
+    "/assets/buses/bus3.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000002",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34e"
+  },
+  "name": "Orange Tours & Travels",
+  "from_city": "Hyderabad",
+  "to_city": "Chennai",
+  "departure_time": "21:45",
+  "arrival_time": "06:45",
+  "journey_date": "2026-04-18",
+  "total_seats": 38,
+  "price_per_seat": 950,
+  "bus_type": "AC Sleeper",
+  "amenities": [
+    "Complimentary Snacks",
+    "Water",
+    "WiFi",
+    "Movies"
+  ],
+  "images": [
+    "/assets/buses/bus1.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000004",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34f"
+  },
+  "name": "GVR Express",
+  "from_city": "Hyderabad",
+  "to_city": "Chennai",
+  "departure_time": "07:30",
+  "arrival_time": "16:30",
+  "journey_date": "2026-04-17",
+  "total_seats": 48,
+  "price_per_seat": 550,
+  "bus_type": "Non-AC Seater",
+  "amenities": [
+    "Leg Rest",
+    "Water Bottle"
+  ],
+  "images": [
+    "/assets/buses/bus2.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000004",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae351"
+  },
+  "name": "WBTC Royal Gold",
+  "from_city": "Kolkata",
+  "to_city": "Darjeeling",
+  "departure_time": "06:30",
+  "arrival_time": "18:30",
+  "journey_date": "2026-04-17",
+  "total_seats": 45,
+  "price_per_seat": 750,
+  "bus_type": "AC Seater",
+  "amenities": [
+    "Air Suspension",
+    "Professional Staff",
+    "Meal Included"
+  ],
+  "images": [
+    "/assets/buses/bus1.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000005",
+  "booked_seats": []
+},
+{
+  "_id": {
+    "$oid": "69e0ae57e5fb38f5f2cae34b"
+  },
+  "name": "Neeta Volvo Multi-Axle",
+  "from_city": "Mumbai",
+  "to_city": "Pune",
+  "departure_time": "18:00",
+  "arrival_time": "21:30",
+  "journey_date": "2026-04-19",
+  "total_seats": 30,
+  "price_per_seat": 1200,
+  "bus_type": "AC Sleeper",
+  "amenities": [
+    "Individual AC Vent",
+    "Pillow",
+    "Reading Lamp",
+    "Premium Service"
+  ],
+  "images": [
+    "/assets/buses/bus1.png"
+  ],
+  "is_active": true,
+  "is_verified": true,
+  "vendor_id": "000000000000000000000002",
+  "booked_seats": []
+}]

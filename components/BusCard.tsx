@@ -80,14 +80,14 @@ export default function BusCard({ bus }: { bus: Bus }) {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">{bus.from_city}</p>
             </div>
 
-            <div className="flex-1 flex flex-col items-center px-6">
+            <div className="flex-1 flex flex-col items-center px-2 sm:px-6">
                <span className="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-tighter">{getDuration()}</span>
                <div className="w-full flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                  <div className="w-1 h-1 rounded-full bg-slate-200"></div>
                   <div className="flex-1 h-px bg-slate-200 border-t border-dashed border-slate-300"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                  <div className="w-1 h-1 rounded-full bg-slate-200"></div>
                </div>
-               <span className="text-[9px] font-bold text-slate-300 mt-1">Direct Service</span>
+               <span className="text-[9px] font-bold text-slate-300 mt-1">Direct</span>
             </div>
 
             <div className="text-center md:text-right">
@@ -128,17 +128,17 @@ export default function BusCard({ bus }: { bus: Bus }) {
       </div>
 
       {/* Footer stripe for Amenities or Badges */}
-      <div className="bg-slate-50 border-t border-slate-100 px-5 py-2 flex items-center justify-between">
-         <div className="flex items-center gap-4">
+      <div className="bg-slate-50 border-t border-slate-100 px-4 md:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3">
+         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {bus.amenities?.slice(0, 5).map(a => (
-               <span key={a} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase">
+               <span key={a} className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase tracking-tight">
                   <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                   {a}
                </span>
             ))}
          </div>
-         <button className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 uppercase tracking-tight">
-            <Info size={12} /> Policies
+         <button className="text-[9px] font-bold text-primary hover:underline flex items-center gap-1 uppercase tracking-tight ml-auto">
+            <Info size={10} /> Policies
          </button>
       </div>
     </div>

@@ -43,10 +43,10 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
   return (
     <div 
       onClick={() => router.push(`/hotels/${hotel.id}`)} 
-      className="flex bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5 cursor-pointer group"
+      className="flex flex-col md:flex-row bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all p-3 gap-5 cursor-pointer group"
     >
       {/* Image Section */}
-      <div className="relative w-[320px] shrink-0 h-[220px] rounded-xl overflow-hidden bg-slate-100">
+      <div className="relative w-full md:w-[320px] shrink-0 h-[220px] rounded-xl overflow-hidden bg-slate-100">
         {hotel.images && hotel.images[0] ? (
           <Image
             src={hotel.images[0]}
@@ -71,7 +71,7 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
       </div>
 
       {/* Middle Content */}
-      <div className="flex flex-col flex-grow py-2">
+      <div className="flex flex-col flex-grow py-1 md:py-2">
         <div className="flex items-center gap-1 mb-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star
@@ -85,7 +85,7 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
           </span>
         </div>
         
-        <h3 className="text-2xl font-headline font-bold text-slate-900 leading-tight mt-1 mb-2">
+        <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 leading-tight mt-1 mb-2">
           {hotel.name}
         </h3>
         
@@ -94,14 +94,14 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
           <span>{hotel.city}, {hotel.address}</span>
         </p>
 
-        <div className="mt-auto flex flex-wrap gap-2 pt-4">
+        <div className="mt-4 md:mt-auto flex flex-wrap gap-2.5 pt-2">
           {hotel.is_pet_allowed && (
-            <span className="border border-slate-200 text-slate-600 bg-slate-50 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+            <span className="border border-slate-200 text-slate-600 bg-slate-50 text-[10px] font-bold px-2.5 py-1.5 rounded-lg uppercase tracking-wide">
               Pet Friendly
             </span>
           )}
           {hotel.amenities?.slice(0, 3).map((amenity) => (
-            <span key={amenity} className="border border-slate-200 text-slate-600 bg-slate-50 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+            <span key={amenity} className="border border-slate-200 text-slate-600 bg-slate-50 text-[10px] font-bold px-2.5 py-1.5 rounded-lg uppercase tracking-wide">
               {amenity}
             </span>
           ))}
@@ -109,23 +109,28 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
       </div>
 
       {/* Right Pricing Section */}
-      <div className="w-[220px] shrink-0 border-l border-slate-100 flex flex-col items-end py-2 pl-4 justify-between">
-        <div className="flex items-start gap-3 w-full justify-end">
-          <div className="text-right">
-            <p className="font-bold text-slate-900 text-base">{getRatingLabel(hotel.rating)}</p>
-            {hotel.rating > 0 && <p className="text-xs text-slate-500 font-medium">Verified Property</p>}
-          </div>
-          <div className={`h-11 w-11 text-white rounded-xl flex items-center justify-center font-bold text-lg font-headline ${hotel.rating > 0 ? 'bg-primary' : 'bg-slate-400 text-sm'}`}>
-            {hotel.rating > 0 ? hotel.rating.toFixed(1) : "New"}
+      <div className="w-full md:w-[240px] shrink-0 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col p-4 md:py-2 md:pl-6 justify-between gap-4 md:gap-0">
+        <div className="flex items-center md:items-start justify-between md:flex-col md:gap-1 w-full text-left">
+          <div className="flex flex-col md:items-end md:w-full">
+            <p className="font-bold text-slate-900 text-base md:text-lg leading-tight">{getRatingLabel(hotel.rating)}</p>
+            {hotel.rating > 0 && <p className="text-[10px] md:text-xs text-slate-500 font-medium">Verified Property</p>}
           </div>
         </div>
 
-        <div className="text-right flex flex-col items-end w-full mt-auto">
-          <p className="text-2xl font-black text-slate-900 font-headline leading-none mb-4">₹ {minPrice.toLocaleString()}</p>
+        <div className="flex items-end justify-between md:flex-col md:items-end w-full md:mt-auto">
+          <div className="flex flex-col items-start md:items-end">
+            <p className="text-2xl md:text-3xl font-black text-slate-900 font-headline leading-none">₹ {minPrice.toLocaleString()}</p>
+            <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">per night</p>
+          </div>
 
-          <span className="w-full bg-primary group-hover:bg-blue-700 text-white transition-colors py-2.5 rounded-xl font-bold text-sm shadow-md text-center">
-            Select Room
-          </span>
+          <div className="md:w-full md:mt-6">
+            <span className="hidden md:flex items-center justify-center w-full bg-primary group-hover:bg-blue-700 text-white transition-all py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-primary/20">
+              Select Room
+            </span>
+            <div className="md:hidden flex items-center gap-1.5 text-primary font-black text-xs uppercase tracking-widest bg-blue-50 px-4 py-2.5 rounded-xl border border-blue-100/50">
+              Details <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
