@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import BusCard from "@/components/BusCard";
 import { Bus, searchBuses } from "@/lib/api";
@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 
 const BUS_TYPES = ["AC Sleeper", "Non-AC Sleeper", "AC Seater", "Non-AC Seater"];
 
-export default function BusesPage() {
+function BusesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [buses, setBuses] = useState<Bus[]>([]);
@@ -242,5 +242,17 @@ export default function BusesPage() {
       </main>
 
     </div>
+  );
+}
+
+export default function BusesPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-primary" />
+       </div>
+    }>
+      <BusesContent />
+    </Suspense>
   );
 }

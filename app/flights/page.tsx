@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, Plane } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -73,7 +73,7 @@ function FlightCard({ flight }: { flight: Flight }) {
   );
 }
 
-export default function FlightsPage() {
+function FlightsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -301,5 +301,17 @@ export default function FlightsPage() {
       </main>
 
     </div>
+  );
+}
+
+export default function FlightsPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-primary" />
+       </div>
+    }>
+      <FlightsContent />
+    </Suspense>
   );
 }

@@ -25,18 +25,7 @@ type RazorpayOptions = {
   prefill: { name: string; email: string; contact: string };
   theme: { color: string };
   modal: { ondismiss: () => void };
-  config?: {
-    display?: {
-      hide?: { method: string }[];
-      preferences?: { show_default_blocks: boolean };
-      // FIX: Added missing nested types for Razorpay blocks and sequence
-      blocks?: Record<string, {
-        name: string;
-        instruments: { method: string; flows?: string[] }[];
-      }>;
-      sequence?: string[];
-    }
-  };
+  config?: any;
   method?: { [key: string]: boolean };
 };
 
@@ -168,7 +157,7 @@ function BookingContent() {
             preferences: {
               show_default_blocks: true
             }
-          }
+          } as any
         }
       }).open();
     } catch (err: unknown) {

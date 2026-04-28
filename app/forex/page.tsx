@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -182,7 +182,7 @@ function QuoteCard({ provider, amount, targetCurrency }: { provider: ForexProvid
   )
 }
 
-export default function ForexPage() {
+function ForexContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [providers, setProviders] = useState<ForexProvider[]>([]);
@@ -398,5 +398,17 @@ export default function ForexPage() {
       </main>
 
     </div>
+  );
+}
+
+export default function ForexPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f4f7f9] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-blue-600" />
+       </div>
+    }>
+      <ForexContent />
+    </Suspense>
   );
 }

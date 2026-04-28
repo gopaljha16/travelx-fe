@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -195,7 +195,7 @@ function TrainCard({ train }: { train: Train }) {
   )
 }
 
-export default function TrainsPage() {
+function TrainsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [trains, setTrains] = useState<Train[]>([]);
@@ -423,5 +423,17 @@ export default function TrainsPage() {
       </main>
 
     </div>
+  );
+}
+
+export default function TrainsPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-primary" />
+       </div>
+    }>
+      <TrainsContent />
+    </Suspense>
   );
 }

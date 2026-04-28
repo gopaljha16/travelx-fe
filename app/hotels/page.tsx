@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import HotelCard from "@/components/HotelCard";
@@ -45,7 +45,7 @@ const GUEST_RATING_OPTIONS = [
   { label: "4.7+ Exceptional", value: 4.7 },
 ];
 
-export default function HotelsPage() {
+function HotelsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -537,5 +537,17 @@ export default function HotelsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HotelsPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-primary" />
+       </div>
+    }>
+      <HotelsContent />
+    </Suspense>
   );
 }
