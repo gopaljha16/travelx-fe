@@ -3,11 +3,29 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Hotel } from "@/lib/api";
-import { BedDouble, MapPin, Star } from "lucide-react";
+import { BedDouble, Heart, MapPin, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function HotelCard({ hotel }: { hotel: Hotel }) {
-  const { user } = useAuth();
+  const { user, openLogin } = useAuth();
+  const { isInWishlist, toggleWishlistItem } = useWishlist();
+  const isWishlisted = isInWishlist(hotel.id);
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      openLogin();
+      return;
+    }
+    
+    try {
+      await toggleWishlistItem(hotel.id, "hotel");
+    } catch (err) {
+      console.error("Failed to toggle wishlist", err);
+    }
+  };
 
   const minPrice = hotel.room_types?.length
     ? Math.min(...hotel.room_types.map((room) => room.price_per_night))
@@ -39,6 +57,14 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
             <BedDouble size={44} />
           </div>
         )}
+        
+        {/* Wishlist Toggle */}
+        <button 
+          onClick={handleWishlist}
+          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all z-10 ${isWishlisted ? 'bg-primary text-white shadow-lg' : 'bg-white/80 text-slate-400 hover:text-primary hover:bg-white'}`}
+        >
+          <Heart size={18} className={isWishlisted ? "fill-white" : ""} />
+        </button>
       </div>
 
       {/* Middle Content */}

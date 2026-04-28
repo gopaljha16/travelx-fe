@@ -1,24 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Loader2, Mail, Phone, ShieldCheck, X } from "lucide-react";
-import { onboard, sendOtp, verifyOtp } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { Loader2, Mail, X, Building2, ChevronRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { login, onboard, sendOtp, verifyOtp } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
 
 type Step = "identifier" | "otp" | "onboard";
+type AuthMode = "LOGIN" | "SIGNUP";
+type LoginMethod = "OTP" | "PASSWORD";
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLogin, refetch } = useAuth();
 
   const [step, setStep] = useState<Step>("identifier");
+  const [authMode, setAuthMode] = useState<AuthMode>("LOGIN");
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("OTP");
+  
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("PERSONAL");
+  
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (isLoginModalOpen) {
+      const emailParam = searchParams.get("email");
+      const tempPassParam = searchParams.get("temp_pass");
+      const loginParam = searchParams.get("login");
+
+      if (emailParam) setIdentifier(emailParam);
+      if (tempPassParam) {
+        setPassword(tempPassParam);
+        setLoginMethod("PASSWORD");
+      }
+      if (loginParam === "true") {
+        setAuthMode("LOGIN");
+      }
+    }
+  }, [isLoginModalOpen, searchParams]);
 
   if (!isLoginModalOpen) return null;
 
@@ -31,6 +58,21 @@ export default function LoginModal() {
       setStep("otp");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await login(identifier, password);
+      await refetch();
+      closeAndReset();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -60,7 +102,7 @@ export default function LoginModal() {
     setLoading(true);
     setError("");
     try {
-      await onboard(name, email || undefined);
+      await onboard(name, email || undefined, password || undefined);
       await refetch();
       closeAndReset();
     } catch (err: unknown) {
@@ -74,17 +116,20 @@ export default function LoginModal() {
     closeLogin();
     setTimeout(() => {
       setStep("identifier");
+      setAuthMode("LOGIN");
+      setLoginMethod("OTP");
       setIdentifier("");
       setOtp("");
       setName("");
       setEmail("");
+      setPassword("");
       setError("");
     }, 500);
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-[850px] bg-white rounded-xl overflow-hidden shadow-2xl relative transform transition-all animate-in zoom-in-95 duration-200 flex flex-col md:flex-row h-auto md:h-[550px]">
+      <div className="w-full max-w-[850px] bg-white rounded-xl overflow-hidden shadow-2xl relative transform transition-all animate-in zoom-in-95 duration-200 flex flex-col md:flex-row h-auto md:h-[600px]">
         
         {/* Left Pane: Promotional Image Banner */}
         <div className="hidden md:block w-[45%] relative bg-[#f7f2ea]">
@@ -111,7 +156,7 @@ export default function LoginModal() {
         </div>
 
         {/* Right Pane: Login Form */}
-        <div className="w-full md:w-[55%] bg-white relative flex flex-col pt-8 pb-6 px-10">
+        <div className="w-full md:w-[55%] bg-white relative flex flex-col pt-8 pb-6 px-10 overflow-y-auto">
           
           {/* Close Button */}
           <button 
@@ -121,79 +166,109 @@ export default function LoginModal() {
             <X size={20} className="w-5 h-5" />
           </button>
 
-          {/* Account Type Tabs (Visual Only for matching MakeMyTrip layout) */}
+          {/* Login/Signup Tabs */}
           {step === "identifier" && (
-            <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm mb-10 w-full max-w-sm mx-auto">
+            <div className="flex border-b border-slate-100 mb-10">
               <button 
-                onClick={() => setActiveTab("PERSONAL")}
-                className={`flex-1 text-xs font-bold py-2.5 rounded-full transition-colors ${activeTab === "PERSONAL" ? "bg-primary text-white" : "text-slate-600 hover:text-slate-900"}`}
+                onClick={() => { setAuthMode("LOGIN"); setLoginMethod("OTP"); }}
+                className={`pb-3 text-sm font-bold transition-all px-4 relative ${authMode === "LOGIN" ? "text-primary" : "text-slate-400 hover:text-slate-600"}`}
               >
-                PERSONAL ACCOUNT
+                LOGIN
+                {authMode === "LOGIN" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full"></div>}
               </button>
               <button 
-                onClick={() => setActiveTab("MYBIZ")}
-                className={`flex-1 text-xs font-bold py-2.5 rounded-full transition-colors ${activeTab === "MYBIZ" ? "bg-primary text-white" : "text-slate-600 hover:text-slate-900"}`}
+                onClick={() => { setAuthMode("SIGNUP"); setLoginMethod("OTP"); }}
+                className={`pb-3 text-sm font-bold transition-all px-4 relative ${authMode === "SIGNUP" ? "text-primary" : "text-slate-400 hover:text-slate-600"}`}
               >
-                MYBIZ ACCOUNT
+                CREATE ACCOUNT
+                {authMode === "SIGNUP" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full"></div>}
               </button>
             </div>
           )}
 
-          <div className="flex-1 flex flex-col justify-center">
+          <div className="flex-1 flex flex-col justify-center py-4">
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600">{error}</div>}
 
             {step === "identifier" && (
-              <form onSubmit={handleSendOtp} className="w-full max-w-sm mx-auto">
-                <label className="block mb-6">
-                  <span className="block text-sm font-semibold text-slate-700 mb-2">Mobile Number or Email</span>
-                  <div className="flex overflow-hidden rounded-md border border-slate-300 focus-within:border-primary transition-colors hover:border-primary">
-                    <div className="bg-slate-50 border-r border-slate-300 flex items-center px-3 gap-2">
-                      <span className="text-lg">🇮🇳</span> 
-                      <span className="text-sm font-semibold text-slate-700">+91</span>
-                      <span className="material-symbols-outlined text-[16px] text-primary">expand_more</span>
+              <div className="w-full max-w-sm mx-auto">
+                <form onSubmit={loginMethod === "OTP" ? handleSendOtp : handlePasswordLogin}>
+                  <label className="block mb-4">
+                    <span className="block text-sm font-semibold text-slate-700 mb-2">
+                      {loginMethod === "OTP" ? "Mobile Number or Email" : "Email Address"}
+                    </span>
+                    <div className="flex overflow-hidden rounded-md border border-slate-300 focus-within:border-primary transition-colors hover:border-primary">
+                      {loginMethod === "OTP" && (
+                        <div className={`bg-slate-50 border-r border-slate-300 flex items-center px-3 gap-2 transition-all duration-300 ${identifier.includes("@") ? "w-12 justify-center" : "w-auto"}`}>
+                          {identifier.includes("@") ? (
+                            <Mail size={18} className="text-primary" />
+                          ) : (
+                            <>
+                              <span className="text-lg">🇮🇳</span> 
+                              <span className="text-sm font-semibold text-slate-700">+91</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <input
+                        type={loginMethod === "OTP" ? "text" : "email"}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        className="w-full py-3 px-4 text-slate-900 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal text-sm"
+                        placeholder={loginMethod === "OTP" ? "Enter Mobile Number or Email" : "Enter your email"}
+                        autoFocus
+                        required
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full py-3 px-4 text-slate-900 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal text-sm"
-                      placeholder="Enter Mobile Number or Email"
-                      autoFocus
-                      required
-                    />
+                  </label>
+
+                  {loginMethod === "PASSWORD" && (
+                    <label className="block mb-6">
+                      <span className="block text-sm font-semibold text-slate-700 mb-2">Password</span>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full py-3 px-4 rounded-md border border-slate-300 focus:border-primary outline-none transition-colors text-slate-900 font-semibold text-sm"
+                        placeholder="Enter your password"
+                        required
+                      />
+                    </label>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={loading || !identifier || (loginMethod === "PASSWORD" && !password)} 
+                    className="w-full bg-primary text-white font-black tracking-wide py-3.5 rounded-md transition-all hover:bg-blue-700 hover:shadow-lg disabled:opacity-70 flex justify-center items-center gap-2"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : (authMode === "SIGNUP" ? "CONTINUE SIGNUP" : "LOGIN")}
+                  </button>
+                </form>
+
+                {authMode === "LOGIN" && (
+                  <div className="mt-4 text-center">
+                    <button 
+                      type="button" 
+                      onClick={() => setLoginMethod(loginMethod === "OTP" ? "PASSWORD" : "OTP")}
+                      className="text-xs font-bold text-primary hover:underline"
+                    >
+                      {loginMethod === "OTP" ? "Login with Password instead" : "Login with OTP instead"}
+                    </button>
                   </div>
-                </label>
-
-                <button 
-                  type="submit" 
-                  disabled={loading || !identifier} 
-                  className="w-full bg-slate-200 text-slate-500 font-black tracking-wide py-3.5 rounded-md transition-all hover:bg-primary hover:text-white hover:shadow-lg disabled:opacity-70 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 disabled:hover:shadow-none flex justify-center items-center gap-2"
-                >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : "CONTINUE"}
-                </button>
-
-                <div className="mt-8 flex items-center gap-4">
-                  <div className="flex-1 border-t border-slate-200"></div>
-                  <span className="text-xs font-medium text-slate-400">Or Login/Signup With</span>
-                  <div className="flex-1 border-t border-slate-200"></div>
-                </div>
-
-                <div className="mt-6 flex justify-center gap-4">
-                  <button type="button" className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm text-[#ea4335]">
-                    <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)"><path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/><path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/><path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/><path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/></g></svg>
-                  </button>
-                  <button type="button" className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm text-slate-600">
-                    <Mail size={18} />
-                  </button>
-                </div>
-              </form>
+                )}
+              </div>
             )}
 
             {step === "otp" && (
               <form onSubmit={handleVerifyOtp} className="w-full max-w-sm mx-auto">
                 <div className="mb-8 text-center">
                   <h3 className="text-xl font-bold text-slate-900">Verify OTP</h3>
-                  <p className="text-xs text-slate-500 mt-2">Enter the verification code sent to {identifier}</p>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Enter the code sent to <br/>
+                    <span className="font-bold text-slate-900">{identifier}</span>
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">
+                    via {identifier.includes("@") ? "Email" : "SMS"}
+                  </p>
                 </div>
                 
                 <label className="block mb-6">
@@ -212,14 +287,14 @@ export default function LoginModal() {
                 <button 
                   type="submit" 
                   disabled={loading || otp.length < 6} 
-                  className="w-full bg-primary hover:bg-blue-700 active:scale-[0.98] text-white font-black tracking-wide py-4 mt-2 rounded-md transition-all hover:shadow-lg disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                  className="w-full bg-primary hover:bg-blue-700 active:scale-[0.98] text-white font-black tracking-wide py-4 mt-2 rounded-md transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY & LOGIN"}
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : "VERIFY & CONTINUE"}
                 </button>
 
                 <div className="mt-4 text-center">
                   <button type="button" onClick={() => { setStep("identifier"); setOtp(""); }} className="text-[11px] font-bold text-primary hover:underline">
-                    Edit Phone/Email
+                    Edit {identifier.includes("@") ? "Email" : "Phone"}
                   </button>
                 </div>
               </form>
@@ -227,12 +302,9 @@ export default function LoginModal() {
 
             {step === "onboard" && (
               <form onSubmit={handleOnboard} className="w-full max-w-sm mx-auto">
-                <div className="mb-8 text-center">
-                  <div className="w-12 h-12 bg-[#eef4ff] text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ShieldCheck size={24} />
-                  </div>
+                <div className="mb-6 text-center">
                   <h3 className="text-xl font-bold text-slate-900">Complete Your Profile</h3>
-                  <p className="text-xs text-slate-500 mt-1">Just a few details to personalize your experience.</p>
+                  <p className="text-xs text-slate-500 mt-1">Few more details to create your account.</p>
                 </div>
 
                 <label className="block mb-4">
@@ -248,8 +320,8 @@ export default function LoginModal() {
                   />
                 </label>
 
-                <label className="block mb-6">
-                  <span className="block text-xs font-semibold text-slate-700 mb-1">Email Address <span className="text-slate-400 font-normal">(Optional)</span></span>
+                <label className="block mb-4">
+                  <span className="block text-xs font-semibold text-slate-700 mb-1">Email <span className="text-slate-400 font-normal">(@ is optional if phone used)</span></span>
                   <input 
                     type="email" 
                     value={email} 
@@ -259,10 +331,21 @@ export default function LoginModal() {
                   />
                 </label>
 
+                <label className="block mb-6">
+                  <span className="block text-xs font-semibold text-slate-700 mb-1">Create Password <span className="text-slate-400 font-normal">(Optional)</span></span>
+                  <input 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    className="w-full border border-slate-300 focus:border-primary rounded-md py-3 px-3 text-slate-900 font-medium transition-colors outline-none text-sm" 
+                    placeholder="For faster login next time" 
+                  />
+                </label>
+
                 <button 
                   type="submit" 
                   disabled={loading || !name} 
-                  className="w-full bg-primary hover:bg-blue-700 active:scale-[0.98] text-white font-black tracking-wide py-4 mt-2 rounded-md transition-all hover:shadow-lg disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                  className="w-full bg-primary hover:bg-blue-700 active:scale-[0.98] text-white font-black tracking-wide py-4 mt-2 rounded-md transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : "COMPLETE SETUP"}
                 </button>
@@ -270,7 +353,21 @@ export default function LoginModal() {
             )}
           </div>
 
-          <div className="mt-8 pt-4 text-center">
+          <div className="mt-8 pt-4 text-center border-t border-slate-100">
+            <div className="bg-blue-50/50 rounded-xl p-4 mb-6 group cursor-pointer hover:bg-blue-50 transition-all border border-blue-100/50">
+               <Link href="/mybiz/onboard" className="flex items-center justify-between" onClick={closeAndReset}>
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary">
+                      <Building2 size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-[#008cff]">Work / Business Account</p>
+                      <p className="text-xs font-bold text-slate-700">Join MyBiz to get corporate discounts</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition-all" />
+               </Link>
+            </div>
             <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
               By proceeding, you agree to TravelX's <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>, <span className="text-primary cursor-pointer hover:underline">User Agreement</span> and <span className="text-primary cursor-pointer hover:underline">T&Cs</span>
             </p>

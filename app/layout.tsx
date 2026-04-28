@@ -1,8 +1,11 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import LoginModal from "@/components/LoginModal";
+import { WishlistProvider } from "@/context/WishlistContext";
+import AuthModal from "@/components/LoginModal";
+import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 export const metadata: Metadata = {
   title: "TravelX - Your Digital Concierge",
@@ -21,8 +24,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`font-body transition-colors duration-500`}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
-            <LoginModal />
+            <WishlistProvider>
+              <main className="flex-1 pt-20">
+                {children}
+              </main>
+              <Suspense fallback={null}>
+                <AuthModal />
+              </Suspense>
+              <ForcePasswordChangeModal />
+            </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

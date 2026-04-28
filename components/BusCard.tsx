@@ -2,11 +2,30 @@
 
 import Link from "next/link";
 import { Bus } from "@/lib/api";
-import { ArrowRight, ShieldCheck, Wifi, Battery, MapPin, Info } from "lucide-react";
+import { ArrowRight, ShieldCheck, Wifi, Battery, MapPin, Info, Heart } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function BusCard({ bus }: { bus: Bus }) {
+  const { user, openLogin } = useAuth();
+  const { isInWishlist, toggleWishlistItem } = useWishlist();
+  const isWishlisted = isInWishlist(bus.id);
   const availableSeats = bus.total_seats - bus.booked_seats.length;
   const soldOut = availableSeats <= 0;
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      openLogin();
+      return;
+    }
+    
+    try {
+      await toggleWishlistItem(bus.id, "bus");
+    } catch (err) {
+      console.error("Failed to toggle wishlist", err);
+    }
+  };
 
   // Calculate duration string e.g. "06h 30m"
   const getDuration = () => {
@@ -25,9 +44,17 @@ export default function BusCard({ bus }: { bus: Bus }) {
         
         {/* Left: Operator & Bus Info */}
         <div className="md:w-1/4">
-          <h3 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors leading-tight">
-            {bus.name}
-          </h3>
+          <div className="flex items-start justify-between">
+            <h3 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors leading-tight">
+              {bus.name}
+            </h3>
+            <button 
+              onClick={handleWishlist}
+              className={`p-1.5 rounded-full transition-all md:hidden xl:flex ${isWishlisted ? 'text-primary' : 'text-slate-300 hover:text-primary'}`}
+            >
+              <Heart size={18} className={isWishlisted ? "fill-primary" : ""} />
+            </button>
+          </div>
           <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">
             {bus.bus_type}
           </p>

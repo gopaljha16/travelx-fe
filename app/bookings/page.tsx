@@ -5,14 +5,30 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Booking, BusBooking, cancelBooking, cancelBusBooking, getMyBookings, getMyBusBookings, submitReview } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { BusFront, Calendar, Hotel, Loader2, MapPin, Star, TicketX } from "lucide-react";
+import { BusFront, Calendar, Hotel, Loader2, MapPin, Star, TicketX, ChevronRight, Clock, Info, CheckCircle2, XCircle, Luggage } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
-  CONFIRMED: "bg-emerald-50 text-emerald-700",
-  CANCELLED: "bg-slate-100 text-slate-600",
-  COMPLETED: "bg-blue-50 text-blue-700",
-  PAYMENT_PENDING: "bg-amber-50 text-amber-700",
-  FAILED: "bg-red-50 text-red-600",
+  CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  CANCELLED: "bg-slate-100 text-slate-600 border-slate-200",
+  COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
+  PAYMENT_PENDING: "bg-orange-50 text-orange-700 border-orange-200 shadow-sm",
+  FAILED: "bg-red-50 text-red-600 border-red-200",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  PAYMENT_PENDING: "Unpaid / Pending",
+  CONFIRMED: "Confirmed",
+  CANCELLED: "Cancelled",
+  COMPLETED: "Completed",
+  FAILED: "Failed",
+};
+
+const STATUS_ICONS: Record<string, React.ReactNode> = {
+  PAYMENT_PENDING: <Clock size={14} className="animate-pulse" />,
+  CONFIRMED: <CheckCircle2 size={14} />,
+  CANCELLED: <XCircle size={14} />,
+  COMPLETED: <CheckCircle2 size={14} />,
+  FAILED: <XCircle size={14} />,
 };
 
 export default function BookingsPage() {
@@ -78,10 +94,7 @@ export default function BookingsPage() {
   };
 
   const submitHotelReview = async () => {
-    if (!reviewModal) {
-      return;
-    }
-
+    if (!reviewModal) return;
     setActionLoadingId(reviewModal.bookingId);
     try {
       await submitReview({
@@ -103,133 +116,187 @@ export default function BookingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="tx-page">
+      <div className="tx-page min-h-screen bg-background">
         <Navbar />
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 size={30} className="animate-spin text-[#ff6b35]" />
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+          <Loader2 size={40} className="animate-spin text-primary" />
+          <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Syncing your trips...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="tx-page">
+    <div className="tx-page min-h-screen bg-background font-body">
       <Navbar />
 
-      <section className="tx-shell py-10">
-        <div className="rounded-[36px] bg-[linear-gradient(135deg,#10213d_0%,#17325f_100%)] p-8 text-white sm:p-10">
-          <p className="tx-kicker text-orange-200">My trips</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">All your TravelX bookings in one place.</h1>
-          <p className="mt-3 max-w-2xl text-sm text-white/75 sm:text-base">
-            A single dashboard for hotel stays, bus journeys, cancellation actions, and booking detail views.
-          </p>
-        </div>
+      <main className="pt-20 pb-20">
+        {/* -- HERO HEADER -- */}
+        <section className="relative overflow-hidden bg-[linear-gradient(135deg,#0f1c2c_0%,#1a3a5f_100%)] px-6 py-16 sm:py-24">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl"></div>
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-tertiary/10 blur-3xl"></div>
+          
+          <div className="tx-shell relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 text-left">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-primary-fixed">
+                  <Luggage size={14} /> My Grand Voyages
+                </span>
+                <h1 className="mt-6 font-headline text-4xl font-black tracking-tight text-white sm:text-6xl">
+                  Your journey, <span className="text-primary-fixed-dim italic">curated.</span>
+                </h1>
+                <p className="mt-6 max-w-xl text-lg font-medium leading-relaxed text-white/70">
+                  Manage your hotel stays, bus trips, and travel memories in a single, high-fidelity workspace.
+                </p>
+              </div>
 
-        <div className="mt-6 flex gap-3">
-          <button onClick={() => setTab("hotels")} className={tab === "hotels" ? "tx-button-primary" : "tx-button-secondary"}>
-            <Hotel size={18} />
-            Hotels
-          </button>
-          <button onClick={() => setTab("buses")} className={tab === "buses" ? "tx-button-primary" : "tx-button-secondary"}>
-            <BusFront size={18} />
-            Buses
-          </button>
-        </div>
+              {/* -- MODERN TAB SWITCHER -- */}
+              <div className="inline-flex gap-1 rounded-2xl bg-white/10 p-1.5 backdrop-blur-md">
+                <button
+                  onClick={() => setTab("hotels")}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
+                    tab === "hotels"
+                      ? "bg-white text-on-surface font-bold shadow-lg"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <Hotel size={18} />
+                  <span className="text-sm">Hotels</span>
+                </button>
+                <button
+                  onClick={() => setTab("buses")}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
+                    tab === "buses"
+                      ? "bg-white text-on-surface font-bold shadow-lg"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <BusFront size={18} />
+                  <span className="text-sm">Buses</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {feedback && <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">{feedback}</div>}
-
-        <div className="mt-6 space-y-8">
-          {tab === "hotels" ? (
-            <>
-              <BookingGroup
-                title="Upcoming hotel stays"
-                emptyMessage="No upcoming hotel bookings yet."
-                items={hotelSections.upcoming}
-                renderItem={(booking) => (
-                  <HotelBookingCard
-                    booking={booking}
-                    actionLoadingId={actionLoadingId}
-                    onCancel={cancelHotelBooking}
-                    onReview={() => setReviewModal({ bookingId: booking.id, hotelId: booking.hotel_id })}
-                    onOpen={() => router.push(`/bookings/${booking.id}?type=hotel`)}
-                  />
-                )}
-              />
-              <BookingGroup
-                title="Past hotel stays"
-                emptyMessage="No completed or cancelled hotel bookings yet."
-                items={hotelSections.past}
-                renderItem={(booking) => (
-                  <HotelBookingCard
-                    booking={booking}
-                    actionLoadingId={actionLoadingId}
-                    onCancel={cancelHotelBooking}
-                    onReview={() => setReviewModal({ bookingId: booking.id, hotelId: booking.hotel_id })}
-                    onOpen={() => router.push(`/bookings/${booking.id}?type=hotel`)}
-                  />
-                )}
-              />
-            </>
-          ) : (
-            <>
-              <BookingGroup
-                title="Upcoming bus trips"
-                emptyMessage="No upcoming bus bookings yet."
-                items={busSections.upcoming}
-                renderItem={(booking) => (
-                  <BusBookingCard
-                    booking={booking}
-                    actionLoadingId={actionLoadingId}
-                    onCancel={cancelBusReservation}
-                    onOpen={() => router.push(`/bookings/${booking.id}?type=bus`)}
-                  />
-                )}
-              />
-              <BookingGroup
-                title="Past bus trips"
-                emptyMessage="No completed or cancelled bus bookings yet."
-                items={busSections.past}
-                renderItem={(booking) => (
-                  <BusBookingCard
-                    booking={booking}
-                    actionLoadingId={actionLoadingId}
-                    onCancel={cancelBusReservation}
-                    onOpen={() => router.push(`/bookings/${booking.id}?type=bus`)}
-                  />
-                )}
-              />
-            </>
+        <section className="tx-shell -mt-10 px-6">
+          {feedback && (
+            <div className="mb-10 flex items-center justify-between rounded-[2rem] border border-primary-container bg-primary-container/30 px-6 py-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <Info size={18} className="text-primary-fixed-variant" />
+                <p className="text-sm font-bold text-on-primary-fixed-variant">{feedback}</p>
+              </div>
+              <button onClick={() => setFeedback("")} className="text-xs font-black uppercase tracking-widest opacity-60 hover:opacity-100">Dismiss</button>
+            </div>
           )}
-        </div>
-      </section>
 
+          <div className="space-y-16">
+            {tab === "hotels" ? (
+              <>
+                <BookingGroup
+                  title="Upcoming Hotel Stays"
+                  emptyMessage="No upcoming hotel stays. Time for a new vibe?"
+                  items={hotelSections.upcoming}
+                  renderItem={(booking) => (
+                    <HotelBookingCard
+                      booking={booking}
+                      actionLoadingId={actionLoadingId}
+                      onCancel={cancelHotelBooking}
+                      onReview={() => setReviewModal({ bookingId: booking.id, hotelId: booking.hotel_id })}
+                      onOpen={() => router.push(`/bookings/${booking.id}?type=hotel`)}
+                    />
+                  )}
+                />
+                <BookingGroup
+                  title="Past Hotel Memories"
+                  emptyMessage="No past trips found."
+                  items={hotelSections.past}
+                  renderItem={(booking) => (
+                    <HotelBookingCard
+                      booking={booking}
+                      actionLoadingId={actionLoadingId}
+                      onCancel={cancelHotelBooking}
+                      onReview={() => setReviewModal({ bookingId: booking.id, hotelId: booking.hotel_id })}
+                      onOpen={() => router.push(`/bookings/${booking.id}?type=hotel`)}
+                    />
+                  )}
+                />
+              </>
+            ) : (
+              <>
+                <BookingGroup
+                  title="Upcoming Bus Trips"
+                  emptyMessage="No bus bookings in your horizon."
+                  items={busSections.upcoming}
+                  renderItem={(booking) => (
+                    <BusBookingCard
+                      booking={booking}
+                      actionLoadingId={actionLoadingId}
+                      onCancel={cancelBusReservation}
+                      onOpen={() => router.push(`/bookings/${booking.id}?type=bus`)}
+                    />
+                  )}
+                />
+                <BookingGroup
+                  title="Completed Journeys"
+                  emptyMessage="Your journey history is waiting to be filled."
+                  items={busSections.past}
+                  renderItem={(booking) => (
+                    <BusBookingCard
+                      booking={booking}
+                      actionLoadingId={actionLoadingId}
+                      onCancel={cancelBusReservation}
+                      onOpen={() => router.push(`/bookings/${booking.id}?type=bus`)}
+                    />
+                  )}
+                />
+              </>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* -- REVIEW MODAL -- */}
       {reviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-          <div className="tx-card w-full max-w-md p-6">
-            <h2 className="text-2xl font-black text-slate-900">Write a review</h2>
-            <p className="mt-2 text-sm text-slate-600">Share quick feedback for your completed stay.</p>
-            <div className="mt-5 flex gap-2">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md scale-in rounded-[3rem] bg-surface p-8 shadow-2xl border border-outline-variant/10">
+            <h2 className="font-headline text-3xl font-black text-on-surface">Leave a Review</h2>
+            <p className="mt-2 text-on-surface-variant">How was your stay at TravelX?</p>
+            
+            <div className="mt-8 flex justify-center gap-3">
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
                   key={value}
                   onClick={() => setReviewRating(value)}
-                  className={`rounded-full p-2 ${value <= reviewRating ? "bg-orange-50 text-[#ff6b35]" : "bg-slate-100 text-slate-400"}`}
+                  className={`group flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${
+                    value <= reviewRating ? "bg-primary/10 text-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant"
+                  }`}
                 >
-                  <Star size={18} fill="currentColor" />
+                  <Star size={24} fill={value <= reviewRating ? "currentColor" : "none"} strokeWidth={value <= reviewRating ? 0 : 2} />
+                  <span className="text-[10px] font-black uppercase">{value}</span>
                 </button>
               ))}
             </div>
+
             <textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              className="mt-4 min-h-[130px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#ff6b35] focus:ring-4 focus:ring-orange-100"
-              placeholder="What stood out about the property?"
+              className="mt-8 min-h-[140px] w-full rounded-[2rem] border-none bg-surface-container-low p-6 font-medium text-on-surface outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/40"
+              placeholder="Tell us about the hospitality, decor, and vibe..."
             />
-            <div className="mt-5 flex gap-3">
-              <button onClick={submitHotelReview} className="tx-button-primary">
-                Submit review
+
+            <div className="mt-8 grid grid-cols-2 gap-4">
+              <button 
+                onClick={submitHotelReview} 
+                disabled={actionLoadingId !== null}
+                className="voyage-button flex items-center justify-center rounded-2xl py-4 font-bold text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-sm"
+              >
+                {actionLoadingId !== null ? <Loader2 className="animate-spin text-white" /> : "Post Review"}
               </button>
-              <button onClick={() => setReviewModal(null)} className="tx-button-secondary">
+              <button 
+                onClick={() => setReviewModal(null)} 
+                className="rounded-2xl bg-surface-container-highest py-4 font-bold text-on-surface hover:bg-surface-dim transition-all text-sm"
+              >
                 Close
               </button>
             </div>
@@ -242,12 +309,23 @@ export default function BookingsPage() {
 
 function BookingGroup<T>({ title, items, emptyMessage, renderItem }: { title: string; items: T[]; emptyMessage: string; renderItem: (item: T) => React.ReactNode }) {
   return (
-    <section>
-      <h2 className="text-2xl font-black tracking-tight text-slate-900">{title}</h2>
+    <section className="text-left">
+      <div className="flex items-center gap-4 mb-8">
+        <h2 className="font-headline text-2xl font-black tracking-tight text-on-surface">{title}</h2>
+        <div className="h-px flex-1 bg-outline-variant/10"></div>
+        <span className="text-xs font-black uppercase tracking-[0.2em] opacity-40">{items.length} trips</span>
+      </div>
+      
       {items.length === 0 ? (
-        <div className="tx-card mt-4 p-6 text-sm font-semibold text-slate-500">{emptyMessage}</div>
+        <div className="flex flex-col items-center justify-center rounded-[3rem] border border-dashed border-outline-variant bg-surface-container-lowest p-16 text-center shadow-inner">
+           <div className="w-16 h-16 rounded-[1.5rem] bg-surface-container flex items-center justify-center mb-6">
+             <Luggage size={32} className="text-on-surface-variant/40" />
+           </div>
+           <p className="text-lg font-bold text-on-surface">{emptyMessage}</p>
+           <button className="mt-6 text-primary font-black uppercase tracking-widest text-xs hover:underline">Browse curated destinations</button>
+        </div>
       ) : (
-        <div className="mt-4 space-y-4">{items.map(renderItem)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">{items.map(renderItem)}</div>
       )}
     </section>
   );
@@ -267,51 +345,59 @@ function HotelBookingCard({
   onOpen: () => void;
 }) {
   return (
-    <article className="tx-card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="tx-kicker">Hotel booking</div>
-          <h3 className="mt-2 text-2xl font-black text-slate-900">{booking.hotel_name || "TravelX stay"}</h3>
-          <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
-            <Calendar size={16} className="text-[#ff6b35]" />
-            {booking.check_in} to {booking.check_out}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-slate-500">
-            {booking.room_type_name} • {booking.num_rooms} room(s) • {booking.num_guests} guest(s)
-          </p>
+    <article className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] bg-white border border-outline-variant/5 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+               <Hotel size={18} className="text-primary" />
+             </div>
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-primary">Hotel Booking</p>
+               <p className="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                 <Calendar size={12} /> {booking.check_in}
+               </p>
+             </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${STATUS_STYLES[booking.status] || "bg-slate-50 text-slate-500 border-slate-200"}`}>
+              {STATUS_ICONS[booking.status]}
+              {STATUS_LABELS[booking.status] || booking.status}
+            </span>
+            {booking.status === "PAYMENT_PENDING" && (
+              <p className="animate-pulse text-[10px] font-black uppercase tracking-tighter text-orange-600">Action Required</p>
+            )}
+          </div>
         </div>
-        <span className={`tx-badge ${STATUS_STYLES[booking.status] || "bg-slate-100 text-slate-600"}`}>{booking.status}</span>
+
+        <h3 className="font-headline text-2xl font-black text-on-surface">{booking.hotel_name || "TravelX stay"}</h3>
+        <p className="mt-3 text-sm font-medium text-on-surface-variant leading-relaxed line-clamp-2">
+          {booking.room_type_name} • {booking.num_rooms} room(s) for {booking.num_guests} guests. Full itinerary details available in the concierge view.
+        </p>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
-        <div className="text-2xl font-black tracking-tight text-slate-900">INR {booking.total_price.toLocaleString()}</div>
-        <div className="flex flex-wrap gap-3">
-          {booking.status === "CONFIRMED" && (
-            <button onClick={() => onCancel(booking.id)} className="tx-button-secondary" disabled={actionLoadingId === booking.id}>
-              {actionLoadingId === booking.id ? <Loader2 size={16} className="animate-spin" /> : <TicketX size={16} />}
-              Cancel
-            </button>
-          )}
-          {booking.status === "COMPLETED" && (
-            <button onClick={onReview} className="tx-button-secondary">
-              <Star size={16} />
-              Review
-            </button>
-          )}
-          {booking.latitude && booking.longitude && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${booking.latitude},${booking.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tx-button-secondary"
-            >
-              <MapPin size={16} />
-              Directions
-            </a>
-          )}
-          <button onClick={onOpen} className="tx-button-primary">
-            View details
-          </button>
+      <div className="bg-surface-container-lowest/50 backdrop-blur-sm p-6 flex items-center justify-between border-t border-outline-variant/10">
+        <div>
+           <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Total Vibe Cost</p>
+           <p className="text-2xl font-black text-on-surface">₹{booking.total_price.toLocaleString()}</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+           {booking.status === "CONFIRMED" && (
+             <button onClick={() => onCancel(booking.id)} disabled={actionLoadingId === booking.id} className="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition-colors shadow-sm border border-orange-100">
+               {actionLoadingId === booking.id ? <Loader2 size={16} className="animate-spin" /> : <TicketX size={18} />}
+             </button>
+           )}
+           {booking.status === "COMPLETED" && (
+             <button onClick={onReview} className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors shadow-sm border border-primary/10">
+               <Star size={18} />
+             </button>
+           )}
+           <button onClick={onOpen} className="voyage-button h-11 px-5 rounded-xl text-white text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 group/btn">
+             Details
+             <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+           </button>
         </div>
       </div>
     </article>
@@ -330,36 +416,60 @@ function BusBookingCard({
   onOpen: () => void;
 }) {
   return (
-    <article className="tx-card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="tx-kicker">Bus booking</div>
-          <h3 className="mt-2 text-2xl font-black text-slate-900">
-            {booking.from_city} to {booking.to_city}
-          </h3>
-          <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
-            <Calendar size={16} className="text-[#ff6b35]" />
-            {booking.journey_date}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-slate-500">
-            {booking.bus_type || "Standard"} • Seats {booking.seat_numbers.join(", ")}
-          </p>
+    <article className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] bg-white border border-outline-variant/5 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+               <BusFront size={18} />
+             </div>
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-tertiary">Bus Journey</p>
+               <p className="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                 <Calendar size={12} /> {booking.journey_date}
+               </p>
+             </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${STATUS_STYLES[booking.status] || "bg-slate-50 text-slate-500 border-slate-200"}`}>
+              {STATUS_ICONS[booking.status]}
+              {STATUS_LABELS[booking.status] || booking.status}
+            </span>
+            {booking.status === "PAYMENT_PENDING" && (
+              <p className="animate-pulse text-[10px] font-black uppercase tracking-tighter text-orange-600">Action Required</p>
+            )}
+          </div>
         </div>
-        <span className={`tx-badge ${STATUS_STYLES[booking.status] || "bg-slate-100 text-slate-600"}`}>{booking.status}</span>
+
+        <div className="flex items-center gap-4">
+          <h3 className="font-headline text-2xl font-black text-on-surface">{booking.from_city}</h3>
+          <ChevronRight className="text-on-surface-variant/40" />
+          <h3 className="font-headline text-2xl font-black text-on-surface">{booking.to_city}</h3>
+        </div>
+        
+        <div className="mt-4 flex flex-wrap gap-2 text-on-surface-variant">
+           <span className="text-xs px-2 py-0.5 bg-surface-container rounded-md font-bold uppercase tracking-tighter">Seats: {booking.seat_numbers.join(", ")}</span>
+           <span className="text-xs px-2 py-0.5 bg-surface-container rounded-md font-bold uppercase tracking-tighter">{booking.bus_type || "Voyage Class"}</span>
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
-        <div className="text-2xl font-black tracking-tight text-slate-900">INR {booking.total_price.toLocaleString()}</div>
-        <div className="flex flex-wrap gap-3">
-          {booking.status === "CONFIRMED" && (
-            <button onClick={() => onCancel(booking.id)} className="tx-button-secondary" disabled={actionLoadingId === booking.id}>
-              {actionLoadingId === booking.id ? <Loader2 size={16} className="animate-spin" /> : <TicketX size={16} />}
-              Cancel
-            </button>
-          )}
-          <button onClick={onOpen} className="tx-button-primary">
-            View details
-          </button>
+      <div className="bg-tertiary-container/30 backdrop-blur-sm p-6 flex items-center justify-between border-t border-outline-variant/10">
+        <div>
+           <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Fare</p>
+           <p className="text-2xl font-black text-on-surface">₹{booking.total_price.toLocaleString()}</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+           {booking.status === "CONFIRMED" && (
+             <button onClick={() => onCancel(booking.id)} disabled={actionLoadingId === booking.id} className="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition-colors shadow-sm border border-orange-100">
+               {actionLoadingId === booking.id ? <Loader2 size={16} className="animate-spin" /> : <TicketX size={18} />}
+             </button>
+           )}
+           <button onClick={onOpen} className="voyage-button h-11 px-5 rounded-xl text-white text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 group/btn">
+             View Ticket
+             <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+           </button>
         </div>
       </div>
     </article>

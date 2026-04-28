@@ -1,37 +1,47 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Bus, BusBooking, bookBus, getBus, verifyBusPayment } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { BusFront, Loader2 } from "lucide-react";
 
-type RazorpayResponse = { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string; };
+type RazorpayResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
 type RazorpayOptions = {
-  key: string; amount: number; currency: string; name: string; description: string;
-  order_id?: string; handler: (r: RazorpayResponse) => void | Promise<void>;
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id?: string;
+  handler: (r: RazorpayResponse) => void | Promise<void>;
   prefill: { name: string; email: string; contact: string };
-  theme: { color: string }; 
+  theme: { color: string };
   modal: { ondismiss: () => void };
-  config?: {
-    display?: {
-      hide?: { method: string }[];
-      preferences?: { show_default_blocks: boolean };
-    }
-  };
+  config?: any;
   method?: { [key: string]: boolean };
 };
-declare global { interface Window { Razorpay?: new (o: RazorpayOptions) => { open: () => void }; } }
 
-export default function BusBookPage() {
+declare global {
+  interface Window {
+    Razorpay?: new (o: RazorpayOptions) => { open: () => void };
+  }
+}
+
+function BookingContent() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const seatNumbers = (searchParams.get("seats") ?? "").split(",").map(Number).filter(Boolean);
+  const seatNumbers = (searchParams.get("seats") || "").split(",").map(Number).filter(Boolean);
   const pricePerSeat = Number(searchParams.get("price") ?? 0);
 
   const [bus, setBus] = useState<Bus | null>(null);
@@ -39,31 +49,36 @@ export default function BusBookPage() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Passenger details state — one per seat
   const [passengers, setPassengers] = useState<{ name: string; age: string; gender: string }[]>([]);
-  const [contactEmail, setContactEmail] = useState(user?.email ?? "");
-  const [contactPhone, setContactPhone] = useState(user?.phone ?? "");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const totalPrice = pricePerSeat * seatNumbers.length;
 
   useEffect(() => {
-    if (!user && !authLoading) { router.push("/"); return; }
+    if (!user && !authLoading) {
+      router.push("/");
+      return;
+    }
     if (user) {
-      setContactEmail(user.email ?? "");
-      setContactPhone(user.phone ?? "");
-      // init one passenger slot per seat; first one pre-filled from user
-      setPassengers(seatNumbers.map((_, i) => ({
-        name: i === 0 ? (user.name ?? "") : "",
-        age: "",
-        gender: "Male",
-      })));
+      setContactEmail((prev) => prev || user.email || "");
+      setContactPhone((prev) => prev || user.phone || "");
+
+      if (passengers.length === 0) {
+        setPassengers(seatNumbers.map((_, i) => ({
+          name: i === 0 ? (user.name || "") : "",
+          age: "",
+          gender: "Male",
+        })));
+      }
+
       getBus(params.id)
         .then(setBus)
         .catch(() => setError("Bus not found"))
         .finally(() => setLoading(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, params.id, router, user]);
+  }, [authLoading, params.id, router, user, seatNumbers.length]);
 
   const updatePassenger = (idx: number, field: string, val: string) => {
     setPassengers(cur => cur.map((p, i) => i === idx ? { ...p, [field]: val } : p));
@@ -74,18 +89,22 @@ export default function BusBookPage() {
       new Promise<boolean>(res => {
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
-        s.onload = () => res(true); s.onerror = () => res(false);
+        s.onload = () => res(true);
+        s.onerror = () => res(false);
         document.body.appendChild(s);
       });
 
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !bus || seatNumbers.length === 0) return;
-    setBookingLoading(true); setError("");
+    setBookingLoading(true);
+    setError("");
     try {
       const ok = await loadRazorpay();
       if (!ok || !window.Razorpay) throw new Error("Razorpay SDK failed to load.");
+
       const bk: BusBooking = await bookBus(bus.id, seatNumbers);
+
       new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
         amount: bk.total_price * 100,
@@ -99,7 +118,9 @@ export default function BusBookPage() {
             router.push(`/bookings/bus/${bk.id}/confirmation`);
           } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Payment verification failed");
-          } finally { setBookingLoading(false); }
+          } finally {
+            setBookingLoading(false);
+          }
         },
         prefill: { name: user.name ?? "", email: contactEmail, contact: contactPhone },
         theme: { color: "#005cab" },
@@ -127,7 +148,7 @@ export default function BusBookPage() {
             preferences: {
               show_default_blocks: true
             }
-          }
+          } as any
         }
       }).open();
     } catch (err: unknown) {
@@ -136,16 +157,23 @@ export default function BusBookPage() {
     }
   };
 
-  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const fmtDate = (d: string) => {
+    const date = new Date(d);
+    return isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   if (loading || authLoading) return (
-    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
-      <div className="flex min-h-[80vh] items-center justify-center"><Loader2 size={36} className="animate-spin text-[#005cab]" /></div>
+    <div className="min-h-screen bg-[#f8f9ff]">
+      <Navbar />
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <Loader2 size={36} className="animate-spin text-[#005cab]" />
+      </div>
     </div>
   );
 
   if (!bus) return (
-    <div className="min-h-screen bg-[#f8f9ff]"><Navbar />
+    <div className="min-h-screen bg-[#f8f9ff]">
+      <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-32 text-center">
         <h1 className="text-2xl font-black text-slate-900">Bus not found</h1>
         <button onClick={() => router.back()} className="mt-4 text-[#005cab] font-bold hover:underline">Go back</button>
@@ -157,24 +185,19 @@ export default function BusBookPage() {
     <div className="bg-[#f8f9ff] font-body text-[#0f1c2c]">
       <Navbar />
       <main className="pt-32 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
-        {/* Back */}
         <button onClick={() => router.back()} className="flex items-center gap-2 text-[#005cab] font-medium text-sm mb-8 hover:underline">
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
           Modify Selection
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-
-          {/* ── LEFT ─────────────────────────────────────────── */}
           <div className="lg:col-span-8 space-y-8">
             <div>
-              <h1 className="font-headline text-4xl font-extrabold text-[#0f1c2c] tracking-tight">Review &amp; Secure Checkout</h1>
+              <h1 className="font-headline text-4xl font-extrabold text-[#0f1c2c] tracking-tight">Review & Secured Checkout</h1>
               <p className="text-[#404754] mt-2">Confirm passenger details and secure your journey.</p>
             </div>
 
             <form onSubmit={handleComplete} className="space-y-8">
-
-              {/* Passenger Details */}
               <section className="space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded-full bg-[#005cab]/10 flex items-center justify-center">
@@ -212,7 +235,9 @@ export default function BusBookPage() {
                           value={passengers[idx]?.gender ?? "Male"} onChange={e => updatePassenger(idx, "gender", e.target.value)}
                           className="w-full bg-[#eef4ff] border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-[#005cab] text-sm px-4 py-3 text-[#0f1c2c]"
                         >
-                          <option>Male</option><option>Female</option><option>Other</option>
+                          <option>Male</option>
+                          <option>Female</option>
+                          <option>Other</option>
                         </select>
                       </div>
                     </div>
@@ -220,7 +245,6 @@ export default function BusBookPage() {
                 ))}
               </section>
 
-              {/* Contact Info */}
               <section className="space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded-full bg-[#005cab]/10 flex items-center justify-center">
@@ -256,7 +280,6 @@ export default function BusBookPage() {
                 </div>
               </section>
 
-              {/* Payment info strip */}
               <div className="bg-[#eef4ff] rounded-2xl px-6 py-4 flex items-center gap-4 border border-[#c0c7d6]/20">
                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
                   <span className="material-symbols-outlined text-[#005cab] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
@@ -280,14 +303,11 @@ export default function BusBookPage() {
                   : <><span className="material-symbols-outlined text-[22px]">lock</span> Pay Securely · ₹{totalPrice.toLocaleString()}</>
                 }
               </button>
-              <p className="text-[10px] text-center text-[#404754] px-4">By clicking Pay Securely, you agree to our <a href="#" className="underline">Terms of Voyage</a> &amp; <a href="#" className="underline">Cancellation Policy</a>.</p>
             </form>
           </div>
 
-          {/* ── RIGHT: Summary Sidebar ───────────────────────── */}
           <aside className="lg:col-span-4 sticky top-28">
             <div className="bg-white rounded-2xl shadow-sm border border-[#c0c7d6]/20 overflow-hidden">
-              {/* Bus image header */}
               <div className="h-36 relative">
                 {bus.images?.[0] ? (
                   <Image src={bus.images[0]} alt={bus.name} fill unoptimized className="object-cover" />
@@ -304,7 +324,6 @@ export default function BusBookPage() {
               </div>
 
               <div className="p-6 space-y-5">
-                {/* Itinerary */}
                 <div className="flex items-start gap-4">
                   <div className="flex flex-col items-center gap-1 mt-1">
                     <div className="w-2 h-2 rounded-full bg-[#005cab] ring-4 ring-[#005cab]/10" />
@@ -328,21 +347,6 @@ export default function BusBookPage() {
                   </div>
                 </div>
 
-                {/* Amenity chips */}
-                {bus.amenities?.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-4 border-t border-[#c0c7d6]/15">
-                    {bus.amenities.slice(0, 5).map(a => (
-                      <div key={a} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#eef4ff] text-[10px] font-bold text-[#404754]">
-                        <span className="material-symbols-outlined text-[12px]">
-                          {a.toLowerCase().includes("wifi") ? "wifi" : a.toLowerCase().includes("ac") ? "ac_unit" : "power"}
-                        </span>
-                        {a.toUpperCase()}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Seats selected */}
                 <div className="pt-4 border-t border-[#c0c7d6]/15 space-y-2">
                   <p className="text-xs font-bold text-[#404754] uppercase tracking-wider">Selected Seats</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -352,7 +356,6 @@ export default function BusBookPage() {
                   </div>
                 </div>
 
-                {/* Fare Breakdown */}
                 <div className="space-y-3 pt-4 border-t border-[#c0c7d6]/15">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#404754]">Base Fare ({seatNumbers.length} Seat{seatNumbers.length > 1 ? "s" : ""})</span>
@@ -367,18 +370,7 @@ export default function BusBookPage() {
                       <p className="text-[10px] font-bold text-[#404754] uppercase tracking-widest">Total Amount</p>
                       <p className="text-2xl font-headline font-black text-[#005cab]">₹{totalPrice.toLocaleString()}</p>
                     </div>
-                    <div className="text-right text-[10px] text-[#404754] leading-tight">Incl. GST<br/>Taxes inclusive</div>
                   </div>
-                </div>
-
-                {/* Trust badges */}
-                <div className="flex justify-center gap-6 pt-2 opacity-50">
-                  {[{ icon: "verified", label: "PCI DSS" }, { icon: "lock", label: "SSL" }, { icon: "support_agent", label: "24/7" }].map(b => (
-                    <div key={b.label} className="flex flex-col items-center">
-                      <span className="material-symbols-outlined text-[28px]">{b.icon}</span>
-                      <span className="text-[8px] font-bold uppercase mt-0.5">{b.label}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -389,14 +381,21 @@ export default function BusBookPage() {
       <footer className="bg-slate-50 w-full py-12 px-8 border-t border-slate-100 mt-8">
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-6">
           <span className="font-bold text-slate-900 font-headline">TravelX</span>
-          <div className="flex gap-8">
-            {["Privacy Policy", "Terms of Service", "Fleet Info", "Contact"].map(l => (
-              <a key={l} href="#" className="text-slate-400 text-xs uppercase tracking-widest hover:text-[#005cab] transition-colors">{l}</a>
-            ))}
-          </div>
           <p className="text-slate-400 text-xs">© 2026 TravelX. All rights reserved.</p>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function BusBookPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center">
+        <Loader2 size={36} className="animate-spin text-[#005cab]" />
+      </div>
+    }>
+      <BookingContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import HotelCard from "@/components/HotelCard";
@@ -45,7 +45,7 @@ const GUEST_RATING_OPTIONS = [
   { label: "4.7+ Exceptional", value: 4.7 },
 ];
 
-export default function HotelsPage() {
+function HotelsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -209,7 +209,7 @@ export default function HotelsPage() {
     <div className="bg-[#f8f9fc] min-h-screen text-slate-800 font-body">
       <Navbar />
 
-      <main className="pt-24 pb-20 px-6 max-w-[1400px] mx-auto">
+      <main className="pt-[50px] pb-20 px-6 max-w-[1400px] mx-auto">
         {/* Search Bar Row */}
         <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mb-8 w-full">
           <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-primary rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-inner">
@@ -457,13 +457,15 @@ export default function HotelsPage() {
               
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-slate-500 font-medium">Sort by:</span>
-                <select className="bg-transparent font-bold text-primary outline-none cursor-pointer border-none p-0 pr-1 text-sm tracking-wide" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="recommended">Recommended</option>
-                  <option value="price_low">Price: Low to High</option>
-                  <option value="price_high">Price: High to Low</option>
-                  <option value="rating">Top Rated</option>
-                </select>
-                <span className="material-symbols-outlined text-slate-400 text-[18px]">expand_more</span>
+                <div className="relative flex items-center">
+                  <select className="bg-transparent font-bold text-primary outline-none cursor-pointer border-none p-0 pr-6 text-sm tracking-wide appearance-none" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="recommended">Recommended</option>
+                    <option value="price_low">Price: Low to High</option>
+                    <option value="price_high">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                  </select>
+                  <span className="material-symbols-outlined text-slate-400 text-[18px] absolute right-0 pointer-events-none">expand_more</span>
+                </div>
               </div>
             </div>
 
@@ -535,5 +537,17 @@ export default function HotelsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HotelsPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
+         <Loader2 size={32} className="animate-spin text-primary" />
+       </div>
+    }>
+      <HotelsContent />
+    </Suspense>
   );
 }

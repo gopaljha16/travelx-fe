@@ -82,6 +82,18 @@ export const login = (email: string, password: string) =>
 export const logout = () => request<{ message: string }>("/auth/logout", { method: "POST" });
 export const getProfile = () => request<UserProfile>("/auth/");
 export const refreshToken = () => request<{ message: string }>("/auth/refresh", { method: "POST" });
+export const changePassword = (old_password: string, new_password: string) =>
+  request<{ message: string }>("/auth/change-password", {
+    method: "PUT",
+    body: JSON.stringify({ old_password, new_password })
+  });
+
+// FIX #4: For corporate employees on first login — requires old temporary password
+export const forceChangePassword = (old_password: string, new_password: string) =>
+  request<{ message: string }>("/auth/force-change-password", {
+    method: "POST",
+    body: JSON.stringify({ old_password, new_password })
+  });
 
 export const searchHotels = (params: {
   q?: string;
@@ -189,6 +201,23 @@ export const getMyReviews = (page = 1, limit = 10) =>
 
 export const deleteReview = (id: string) => request<void>(`/reviews/${id}`, { method: "DELETE" });
 
+// Wishlist
+export interface WishlistItem {
+  id: string;
+  item_id: string;
+  item_type: "hotel" | "bus";
+  created_at: string;
+  item_details: Hotel | Bus;
+}
+
+export const getWishlist = () => request<WishlistItem[]>("/wishlist/");
+
+export const toggleWishlist = (item_id: string, item_type: "hotel" | "bus") =>
+  request<{ message: string; is_wishlisted: boolean }>("/wishlist/toggle", {
+    method: "POST",
+    body: JSON.stringify({ item_id, item_type }),
+  });
+
 export interface UserProfile {
   id: string;
   role: string;
@@ -197,6 +226,7 @@ export interface UserProfile {
   name?: string;
   is_onboarded?: boolean;
   is_active: boolean;
+  must_change_password?: boolean;
 }
 
 export interface RoomType {
@@ -318,3 +348,74 @@ export interface ReviewListResponse {
   limit: number;
   average_rating: number;
 }
+
+// ── MyBiz / Corporate ─────────────────────────────────────────────────────────
+
+export interface Organization {
+  id: string;
+  name: string;
+  email: string;
+  gst_number: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  wallet_balance: number;
+  adminIds: string[];
+  managerIds: string[];
+  created_at?: string;
+}
+
+export interface OrgEmployee {
+  user_id: string;
+  email: string;
+  role: "admin" | "manager" | "employee";
+  orgId: string;
+}
+
+export interface OrgCreate {
+  name: string;
+  email: string;
+  gst_number: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+export interface EmployeeAdd {
+  email: string;
+  name?: string;
+  password?: string;
+  role: "admin" | "manager" | "employee";
+}
+
+export const registerOrganization = (data: OrgCreate) =>
+  request<Organization>("/corporate/organization", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getMyOrganization = () =>
+  request<Organization>("/corporate/organization/");
+
+export const addEmployee = (data: EmployeeAdd) =>
+  request<{ message: string; user_id: string; password?: string }>(
+    "/corporate/organization/employees",
+    { method: "POST", body: JSON.stringify(data) }
+  );
+
+export const getEmployees = () =>
+  request<OrgEmployee[]>("/corporate/organization/employees");
+
+export const updateEmployeeRole = (user_id: string, role: string) =>
+  request<{ message: string }>(
+    `/corporate/organization/employees/${user_id}/role`,
+    { method: "PUT", body: JSON.stringify({ role }) }
+  );
+
+export const removeEmployee = (user_id: string) =>
+  request<{ message: string }>(
+    `/corporate/organization/employees/${user_id}`,
+    { method: "DELETE" }
+  );
