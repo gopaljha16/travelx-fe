@@ -189,7 +189,6 @@ export default function ForexPage() {
   const [loading, setLoading] = useState(false);
 
   // Widget States
-  const [activeTab, setActiveTab] = useState("BUY");
   const [targetCurrency, setTargetCurrency] = useState(searchParams.get("currency") || "USD");
   const [amountStr, setAmountStr] = useState(searchParams.get("amount") || "1000");
   const [city, setCity] = useState(searchParams.get("city") || "New Delhi");
@@ -240,95 +239,59 @@ export default function ForexPage() {
     <div className="bg-[#f4f7f9] min-h-screen text-slate-800 font-body pb-20">
       <Navbar />
 
-      {/* Hero Section (Fintech Style) */}
-      <div className="relative pt-[70px] pb-32 lg:pb-40 bg-[url('https://images.unsplash.com/photo-1559815074-ce7b7673fbec?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 to-[#003B95]/90 backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl font-headline font-black text-white text-center tracking-tight mb-4 shadow-sm">
-            Online Foreign Exchange, <span className="text-blue-300">Simplified.</span>
-          </h1>
-          <p className="text-slate-300 text-lg md:text-xl font-medium text-center mb-10 max-w-2xl">
-            Compare live rates from RBI authorized banks & money changers. Get Forex cards or currency notes delivered to your doorstep.
-          </p>
-
-          {/* Calculator Widget */}
-          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-2 md:p-3 pb-8 md:pb-10">
-            {/* Tabs */}
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8 border border-slate-200">
-              <button 
-                onClick={() => setActiveTab("BUY")}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${activeTab === 'BUY' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-              >
-                Buy Forex
-              </button>
-              <button 
-                onClick={() => setActiveTab("SELL")}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${activeTab === 'SELL' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-              >
-                Sell Forex
-              </button>
-              <button 
-                onClick={() => setActiveTab("SEND")}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${activeTab === 'SEND' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-              >
-                Send Money Abroad
-              </button>
+      {/* Simple Search Bar Row */}
+      <div className="pt-[50px] px-6 max-w-[1400px] mx-auto relative z-20">
+        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-center gap-4 bg-white p-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-200 mt-4 mb-6 w-full max-w-7xl mx-auto">
+          {/* City Selection */}
+          <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-blue-600 rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 shadow-inner">
+            <span className="material-symbols-outlined text-blue-600 mr-3 font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+            <div className="flex flex-col w-full relative">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Your City</label>
+              <input 
+                type="text" 
+                value={city} 
+                onChange={(e) => setCity(e.target.value)} 
+                placeholder="City"
+                className="bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full text-slate-900"
+              />
             </div>
-
-            {/* Main Form Area inside Widget */}
-            <form onSubmit={handleSearch} className="px-4 md:px-8 space-y-6">
-              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-                
-                {/* City Selection */}
-                <div className="w-full md:w-1/3 relative border-b-2 border-slate-200 focus-within:border-blue-600 transition-colors pb-2">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-1">Your City</label>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-slate-400">location_on</span>
-                    <input 
-                      type="text" 
-                      value={city} 
-                      onChange={(e) => setCity(e.target.value)} 
-                      className="w-full text-lg font-bold text-slate-900 bg-transparent border-none outline-none p-0" 
-                    />
-                  </div>
-                </div>
-
-                {/* You Need */}
-                <div className="w-full md:w-2/3 flex items-center bg-slate-50 rounded-2xl border border-slate-200 p-2 focus-within:border-blue-600 transition-colors">
-                  <div className="flex-1 px-4 border-r border-slate-200">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-1">Currency Needed</label>
-                    <div className="flex items-center gap-2">
-                      <select 
-                        value={targetCurrency} 
-                        onChange={(e) => setTargetCurrency(e.target.value)}
-                        className="w-full text-2xl md:text-3xl font-black text-slate-900 bg-transparent border-none outline-none p-0 cursor-pointer appearance-none"
-                      >
-                        {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
-                      </select>
-                      <span className="material-symbols-outlined text-blue-600 font-bold">expand_more</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 px-4 relative">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-1">Amount</label>
-                    <input 
-                      type="number" 
-                      value={amountStr} 
-                      onChange={(e) => setAmountStr(e.target.value)} 
-                      className="w-full text-2xl md:text-3xl font-black text-slate-900 bg-transparent border-none outline-none p-0" 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-center pt-4">
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-14 py-4 rounded-2xl text-lg shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all active:scale-95 group flex items-center gap-3 w-full md:w-auto justify-center">
-                  Compare Rates <span className="material-symbols-outlined font-bold group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
+
+          {/* Currency */}
+          <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-blue-600 rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-blue-600 shadow-inner relative">
+            <span className="material-symbols-outlined text-blue-600 mr-3 font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>public</span>
+            <div className="flex flex-col w-full relative">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Currency Needed</label>
+              <select 
+                value={targetCurrency} 
+                onChange={(e) => setTargetCurrency(e.target.value)}
+                className="bg-transparent border-none outline-none text-sm font-bold text-slate-900 cursor-pointer appearance-none p-0 w-full"
+              >
+                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
+              </select>
+              <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">expand_more</span>
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div className="flex-1 bg-slate-50 border border-slate-200 hover:border-blue-600 rounded-xl flex items-center px-4 py-3 group cursor-text transition-colors w-full focus-within:border-blue-600 shadow-inner relative">
+            <span className="material-symbols-outlined text-blue-600 mr-3 font-bold">payments</span>
+            <div className="flex flex-col w-full relative">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Amount</label>
+              <input 
+                type="number" 
+                value={amountStr} 
+                onChange={(e) => setAmountStr(e.target.value)} 
+                placeholder="1000"
+                className="bg-transparent border-none outline-none text-sm font-bold placeholder-slate-400 p-0 w-full text-slate-900"
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 md:py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
+            Update Rates
+          </button>
+        </form>
       </div>
 
       {/* Live Market Rates Ticker */}

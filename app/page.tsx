@@ -18,11 +18,16 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Search Form State
-  const [activeTab, setActiveTab] = useState<"hotels" | "flights" | "trains" | "buses">("hotels");
+  const [activeTab, setActiveTab] = useState<"hotels" | "flights" | "trains" | "buses" | "forex">("hotels");
   const [fromCity, setFromCity] = useState("");
   const [toCity, setToCity] = useState("");
   const [date, setDate] = useState("");
   const [radius, setRadius] = useState("5");
+  
+  // Forex Specific State
+  const [forexCity, setForexCity] = useState("");
+  const [forexCurrency, setForexCurrency] = useState("USD");
+  const [forexAmount, setForexAmount] = useState("1000");
   const [gridHeading, setGridHeading] = useState("Hotels Near You");
   const [gridSubHeading, setGridSubHeading] = useState("Discover curated stays within your immediate radius.");
 
@@ -108,6 +113,11 @@ export default function HomePage() {
       if (fromCity) params.set("city", fromCity);
       if (radius) params.set("radius_km", radius);
       router.push(`/hotels?${params.toString()}`);
+    } else if (activeTab === "forex") {
+      if (forexCity) params.set("city", forexCity);
+      if (forexCurrency) params.set("currency", forexCurrency);
+      if (forexAmount) params.set("amount", forexAmount);
+      router.push(`/forex?${params.toString()}`);
     } else {
       if (fromCity) params.set("from_city", fromCity);
       if (toCity) params.set("to_city", toCity);
@@ -200,37 +210,99 @@ export default function HomePage() {
                   <span className="material-symbols-outlined">directions_bus</span>
                   <span className="text-sm">Bus</span>
                 </button>
+                <button 
+                  onClick={() => setActiveTab("forex")}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all shrink-0 ${
+                    activeTab === "forex" 
+                      ? "bg-primary text-on-primary font-semibold shadow-lg shadow-primary/20" 
+                      : "text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">currency_exchange</span>
+                  <span className="text-sm">Forex</span>
+                </button>
               </div>
 
               {/* Search Inputs Grid */}
               <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-2">
-                <div className={`${activeTab === "hotels" ? "md:col-span-4" : "md:col-span-3"} space-y-2 text-left`}>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">
-                    {activeTab === "hotels" ? "Location" : "From"}
-                  </label>
-                  <div className="relative group">
-                    <input 
-                      type="text"
-                      value={fromCity}
-                      onChange={(e) => setFromCity(e.target.value)}
-                      placeholder={activeTab === "hotels" ? "Where to?" : "Leaving from"}
-                      className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-32 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
-                    />
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">
-                      {activeTab === "flights" ? "flight_takeoff" : activeTab === "trains" ? "train" : "location_on"}
-                    </span>
-                    <button 
-                      type="button"
-                      onClick={detectLocation}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-fixed-dim/30 hover:bg-primary-fixed-dim/50 text-on-primary-fixed-variant transition-all z-10"
-                    >
-                      <span className="material-symbols-outlined text-sm">my_location</span>
-                      <span className="text-[10px] font-bold">NEAR ME</span>
-                    </button>
-                  </div>
-                </div>
+                {activeTab === "forex" ? (
+                  <>
+                    <div className="md:col-span-4 space-y-2 text-left">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">City</label>
+                      <div className="relative group">
+                        <input 
+                          type="text"
+                          value={forexCity}
+                          onChange={(e) => setForexCity(e.target.value)}
+                          placeholder="Your City"
+                          className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
+                        />
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">location_on</span>
+                      </div>
+                    </div>
+                    
+                    <div className="md:col-span-3 space-y-2 text-left">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">Currency</label>
+                      <div className="relative">
+                        <select 
+                          value={forexCurrency}
+                          onChange={(e) => setForexCurrency(e.target.value)}
+                          className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-10 appearance-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
+                        >
+                          <option value="USD">USD - US Dollar</option>
+                          <option value="EUR">EUR - Euro</option>
+                          <option value="GBP">GBP - British Pound</option>
+                          <option value="AED">AED - UAE Dirham</option>
+                          <option value="AUD">AUD - Australian Dollar</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">public</span>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+                      </div>
+                    </div>
 
-                {activeTab !== "hotels" && (
+                    <div className="md:col-span-3 space-y-2 text-left">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">Amount</label>
+                      <div className="relative">
+                        <input 
+                          type="number"
+                          value={forexAmount}
+                          onChange={(e) => setForexAmount(e.target.value)}
+                          placeholder="1000"
+                          className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
+                        />
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">payments</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className={`${activeTab === "hotels" ? "md:col-span-4" : "md:col-span-3"} space-y-2 text-left`}>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">
+                      {activeTab === "hotels" ? "Location" : "From"}
+                    </label>
+                    <div className="relative group">
+                      <input 
+                        type="text"
+                        value={fromCity}
+                        onChange={(e) => setFromCity(e.target.value)}
+                        placeholder={activeTab === "hotels" ? "Where to?" : "Leaving from"}
+                        className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-32 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
+                      />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                        {activeTab === "flights" ? "flight_takeoff" : activeTab === "trains" ? "train" : "location_on"}
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={detectLocation}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-fixed-dim/30 hover:bg-primary-fixed-dim/50 text-on-primary-fixed-variant transition-all z-10"
+                      >
+                        <span className="material-symbols-outlined text-sm">my_location</span>
+                        <span className="text-[10px] font-bold">NEAR ME</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab !== "hotels" && activeTab !== "forex" && (
                   <div className="md:col-span-3 space-y-2 text-left">
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">To</label>
                     <div className="relative">
@@ -268,7 +340,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                ) : (
+                ) : activeTab !== "forex" ? (
                   <div className="md:col-span-3 space-y-2 text-left">
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">Date</label>
                     <div className="relative">
@@ -281,22 +353,24 @@ export default function HomePage() {
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">calendar_today</span>
                     </div>
                   </div>
-                )}
+                ) : null}
 
-                <div className={`${activeTab === "hotels" ? "md:col-span-3" : "md:col-span-1"} space-y-2 text-left`}>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">
-                    {activeTab === "hotels" ? "Check-in" : ""}
-                  </label>
-                  {activeTab === "hotels" ? (
-                    <div className="relative">
-                      <input 
-                        type="date"
-                        className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
-                      />
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">calendar_today</span>
-                    </div>
-                  ) : <div className="h-10 md:h-0"></div>}
-                </div>
+                {activeTab !== "forex" && (
+                  <div className={`${activeTab === "hotels" ? "md:col-span-3" : "md:col-span-1"} space-y-2 text-left`}>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-2">
+                      {activeTab === "hotels" ? "Check-in" : ""}
+                    </label>
+                    {activeTab === "hotels" ? (
+                      <div className="relative">
+                        <input 
+                          type="date"
+                          className="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface text-sm"
+                        />
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">calendar_today</span>
+                      </div>
+                    ) : <div className="h-10 md:h-0"></div>}
+                  </div>
+                )}
 
                 <div className={`${activeTab === "hotels" ? "md:col-span-2" : "md:col-span-2"}`}>
                   <button 
