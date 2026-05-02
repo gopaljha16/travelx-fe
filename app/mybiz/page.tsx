@@ -203,6 +203,7 @@ export default function MyBizDashboardPage() {
               </div>
               <div className="p-5 space-y-3">
                 {[
+                  { href: "/mybiz/portal", icon: <span className="material-symbols-outlined text-base leading-none">travel_explore</span>, label: "Corporate Booking Portal", sub: "Book Flights, Hotels & more", color: "text-blue-600", bg: "bg-blue-50" },
                   { href: "/mybiz/employees", icon: <Users size={18} />, label: "Manage Employees", sub: "Add, update roles, remove", color: "text-primary", bg: "bg-primary/10" },
                   { href: "/mybiz/employees?add=true", icon: <span className="material-symbols-outlined text-base leading-none">person_add</span>, label: "Add New Employee", sub: "Invite or create account", color: "text-emerald-600", bg: "bg-emerald-50" },
                   { href: "/bookings", icon: <span className="material-symbols-outlined text-base leading-none">luggage</span>, label: "View All Trips", sub: "Hotel & bus bookings", color: "text-tertiary", bg: "bg-tertiary/10" },
