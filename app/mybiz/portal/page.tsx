@@ -100,7 +100,7 @@ export default function MyBizPortalPage() {
 
             {/* Search Form (Flights Example) */}
             <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="col-span-1 border border-outline-variant/30 rounded-2xl p-4 hover:border-primary/50 transition-colors cursor-pointer group">
                   <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-1 group-hover:text-primary transition-colors">From</p>
                   <div className="flex items-center gap-2">
@@ -141,7 +141,12 @@ export default function MyBizPortalPage() {
 
               <div className="mt-8 flex justify-center">
                 <Link
-                  href="/mybiz/checkout"
+                  href={
+                    activeTab === 'flights' ? '/flights' :
+                    activeTab === 'hotels' ? '/hotels' :
+                    activeTab === 'trains' ? '/trains' :
+                    activeTab === 'cabs' ? '/cabs' : '/flights'
+                  }
                   className="voyage-button px-10 py-4 rounded-full text-white font-bold text-lg inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                   <Search size={20} />
@@ -161,7 +166,7 @@ export default function MyBizPortalPage() {
                 { from: "Bengaluru (BLR)", to: "New Delhi (DEL)", price: "₹6,200" },
                 { from: "Mumbai (BOM)", to: "Bengaluru (BLR)", price: "₹4,500" },
               ].map((route, i) => (
-                <div key={i} className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-5 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group">
+                <Link key={i} href="/flights" className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-5 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <Plane size={18} className="text-primary" />
@@ -175,7 +180,7 @@ export default function MyBizPortalPage() {
                     <p className="font-headline font-black text-primary text-lg">{route.price}</p>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">GST Invoice</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

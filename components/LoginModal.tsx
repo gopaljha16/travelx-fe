@@ -13,7 +13,7 @@ type AuthMode = "LOGIN" | "SIGNUP";
 type LoginMethod = "OTP" | "PASSWORD";
 
 export default function LoginModal() {
-  const { isLoginModalOpen, closeLogin, refetch } = useAuth();
+  const { isLoginModalOpen, closeLogin, refetch, setUser } = useAuth();
 
   const [step, setStep] = useState<Step>("identifier");
   const [authMode, setAuthMode] = useState<AuthMode>("LOGIN");
@@ -125,6 +125,32 @@ export default function LoginModal() {
       setPassword("");
       setError("");
     }, 500);
+  };
+
+  const handleDummyNormalLogin = () => {
+    setUser({
+      id: "dummy_normal_123",
+      role: "user",
+      email: "user@example.com",
+      name: "Normal User",
+      is_onboarded: true,
+      is_active: true,
+      corporate_role: undefined
+    });
+    closeAndReset();
+  };
+
+  const handleDummyAdminLogin = () => {
+    setUser({
+      id: "dummy_admin_456",
+      role: "user",
+      email: "admin@acme.com",
+      name: "Acme Admin",
+      is_onboarded: true,
+      is_active: true,
+      corporate_role: "admin"
+    });
+    closeAndReset();
   };
 
   return (
@@ -255,6 +281,23 @@ export default function LoginModal() {
                     </button>
                   </div>
                 )}
+
+                <div className="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-4">
+                  <button 
+                    type="button" 
+                    onClick={handleDummyNormalLogin}
+                    className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-md hover:bg-slate-200 text-xs transition-colors"
+                  >
+                    Login as Normal User
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleDummyAdminLogin}
+                    className="w-full bg-blue-50 text-blue-700 border border-blue-100 font-bold py-2.5 rounded-md hover:bg-blue-100 text-xs transition-colors"
+                  >
+                    Login as MyBiz Admin
+                  </button>
+                </div>
               </div>
             )}
 

@@ -6,10 +6,13 @@ import { Plane, User, ChevronRight, ShieldCheck, Info, Trash2, Luggage, Building
 import Navbar from "@/components/Navbar";
 import { DUMMY_FLIGHTS } from "@/app/flights/page";
 import { Flight } from "@/components/FlightCard";
+import { useAuth } from "@/context/AuthContext";
+import { getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
 
 function FlightReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   
   const id = searchParams.get("id");
   
@@ -34,6 +37,23 @@ function FlightReviewContent() {
 
   const [showCancellation, setShowCancellation] = useState(false);
   const [validationError, setValidationError] = useState("");
+
+  const [employees, setEmployees] = useState<OrgEmployee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [orgName, setOrgName] = useState("");
+
+  useEffect(() => {
+    if (user?.corporate_role === 'admin') {
+      getEmployees().then(setEmployees);
+      if (user.organization) {
+        setOrgName(user.organization.name);
+      } else {
+        getMyOrganization().then(org => {
+          if (org) setOrgName(org.name);
+        });
+      }
+    }
+  }, [user]);
 
   // Base prices
   const basePrice = flight ? flight.price : 0;
@@ -159,6 +179,52 @@ function FlightReviewContent() {
 
             <form id="booking-form" onSubmit={handleContinue} className="space-y-6">
               
+              {/* MyBiz Admin Booking Section */}
+              {user?.corporate_role === 'admin' && (
+                <div className="bg-blue-50 rounded-[2rem] p-6 md:p-8 shadow-sm border border-blue-200">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold flex items-center gap-2 text-blue-900">
+                      <Building2 className="text-blue-600" /> Booking on behalf of an Employee?
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">Select an employee from <strong>{orgName || 'your organization'}</strong> to automatically pre-fill details.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-blue-800 mb-2">Select Employee</label>
+                    <select 
+                      value={selectedEmployee} 
+                      onChange={(e) => {
+                        setSelectedEmployee(e.target.value);
+                        if (e.target.value) {
+                           const emp = employees.find(emp => emp.user_id === e.target.value);
+                            if (emp) {
+                              const names = (emp.name || "").split(" ");
+                              const firstName = names[0] || "";
+                              const lastName = names.slice(1).join(" ") || "";
+                              const gender = (emp as any).gender || "";
+                              
+                              setPassengers(cur => cur.map((p, i) => i === 0 ? { 
+                                ...p, 
+                                firstName, 
+                                lastName, 
+                                gender 
+                              } : p));
+                              
+                              setEmail(emp.email);
+                              if ((emp as any).phone) setPhone((emp as any).phone);
+                            }
+                        }
+                      }}
+                      className="w-full bg-white border border-blue-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500 font-bold text-slate-800"
+                    >
+                      <option value="">-- I am booking for myself / New Passenger --</option>
+                      {employees.map(emp => (
+                        <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email} ({emp.employee_id || emp.user_id.slice(-6)})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Traveler Details */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200">
                 <div className="mb-6">
@@ -169,28 +235,46 @@ function FlightReviewContent() {
                 </div>
 
                 <div className="space-y-6">
-                  {passengers.map((p, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-slate-100 bg-slate-50 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <p className="font-bold text-sm text-slate-500">Traveler {idx + 1} (Adult)</p>
+                  {passengers.map((p, i) => (
+                    <div key={i} className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-xl font-bold">Passenger {i + 1}</h3>
+                          {selectedEmployee && i === 0 && (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-100 animate-in zoom-in">
+                              <ShieldCheck size={12} /> Corporate Employee
+                            </span>
+                          )}
+                        </div>
                         {passengers.length > 1 && (
-                          <button type="button" onClick={() => removePassenger(idx)} className="text-red-500 hover:text-red-700 text-[11px] uppercase tracking-widest font-black flex items-center gap-1 transition-colors">
-                            <Trash2 size={14} /> Remove
+                          <button type="button" onClick={() => removePassenger(i)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                            <Trash2 size={20} />
                           </button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                      {selectedEmployee && i === 0 && (
+                        <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex items-start gap-3 animate-in fade-in slide-in-from-left-2">
+                           <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                           <div>
+                             <p className="text-sm font-bold text-blue-900">Corporate Travel Policy Active</p>
+                             <p className="text-xs text-blue-700 mt-1">This booking for <strong>{employees.find(e => e.user_id === selectedEmployee)?.name}</strong> will be billed to the company wallet with full GST benefits.</p>
+                           </div>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-xs font-bold uppercase text-slate-500 mb-1">First & Middle Name</label>
-                          <input required type="text" value={p.firstName} onChange={e => updatePassenger(idx, "firstName", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="e.g. John" />
+                          <input required type="text" value={p.firstName} onChange={e => updatePassenger(i, "firstName", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="e.g. John" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Last Name</label>
-                          <input required type="text" value={p.lastName} onChange={e => updatePassenger(idx, "lastName", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="e.g. Doe" />
+                          <input required type="text" value={p.lastName} onChange={e => updatePassenger(i, "lastName", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="e.g. Doe" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Gender</label>
-                          <select required value={p.gender} onChange={e => updatePassenger(idx, "gender", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500">
+                          <select required value={p.gender} onChange={e => updatePassenger(i, "gender", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500">
                             <option value="">Select</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -200,14 +284,14 @@ function FlightReviewContent() {
                            <p className="text-xs font-bold text-slate-500 uppercase mb-3">Add-ons & Preferences (Optional)</p>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
-                               <select value={p.meal} onChange={e => updatePassenger(idx, "meal", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-600">
+                               <select value={p.meal} onChange={e => updatePassenger(i, "meal", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-600">
                                  <option value="">No Meal Selected</option>
                                  <option value="Veg">Vegetarian Meal</option>
                                  <option value="NonVeg">Non-Vegetarian Meal</option>
                                </select>
                              </div>
                              <div>
-                               <select value={p.seat} onChange={e => updatePassenger(idx, "seat", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-600">
+                               <select value={p.seat} onChange={e => updatePassenger(i, "seat", e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-600">
                                  <option value="">No Seat Preference</option>
                                  <option value="Window">Window Seat</option>
                                  <option value="Aisle">Aisle Seat</option>
@@ -216,7 +300,7 @@ function FlightReviewContent() {
                              </div>
                              <div className="sm:col-span-2">
                                <label className="flex items-center gap-2 cursor-pointer">
-                                 <input type="checkbox" checked={p.wheelchair} onChange={e => updatePassenger(idx, "wheelchair", e.target.checked)} className="w-4 h-4 accent-blue-600" />
+                                 <input type="checkbox" checked={p.wheelchair} onChange={e => updatePassenger(i, "wheelchair", e.target.checked)} className="w-4 h-4 accent-blue-600" />
                                  <span className="text-sm font-medium text-slate-600">Request Wheelchair Assistance</span>
                                </label>
                              </div>
@@ -343,8 +427,12 @@ function FlightReviewContent() {
                   Safe & Secure Payments
                 </div>
 
-                <button form="booking-form" type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-2">
-                  Continue to Pay <ChevronRight size={18} />
+                <button
+                  type="submit"
+                  form="booking-form"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all text-lg uppercase tracking-wider mt-6"
+                >
+                  {selectedEmployee ? "Pay with Corporate Wallet" : "Proceed to Payment"}
                 </button>
              </div>
           </div>

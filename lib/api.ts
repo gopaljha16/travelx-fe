@@ -265,32 +265,114 @@ export const toggleWishlist = (item_id: string, item_type: "hotel" | "bus") =>
 
 // Interfaces have been moved to types.ts to avoid circular dependencies
 
-export const registerOrganization = (data: OrgCreate) =>
-  request<Organization>("/corporate/organization", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+export const registerOrganization = async (data: OrgCreate) => {
+  try {
+    return await request<Organization>("/corporate/organization", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  } catch (err) {
+    console.warn("Backend failed, using mock register organization.");
+    return {
+      id: "ORG123",
+      name: data.name,
+      email: data.email,
+      gst_number: data.gst_number,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      wallet_balance: 500000,
+      adminIds: ["dummy_admin_456"],
+      managerIds: [],
+      created_at: new Date().toISOString()
+    } as Organization;
+  }
+};
 
-export const getMyOrganization = () =>
-  request<Organization>("/corporate/organization/");
+export const getMyOrganization = async () => {
+  try {
+    return await request<Organization>("/corporate/organization/");
+  } catch (err) {
+    console.warn("Backend failed, using mock organization.");
+    return {
+      id: "ORG123",
+      name: "TravelX India Solutions",
+      email: "corporate@travelx.in",
+      gst_number: "27AAAAA0000A1Z5",
+      address: "DLF Cyber City, Tower B",
+      city: "Gurugram",
+      state: "Haryana",
+      country: "India",
+      wallet_balance: 750000,
+      adminIds: ["dummy_admin_456"],
+      managerIds: [],
+      created_at: "2026-05-02T10:00:00Z"
+    } as Organization;
+  }
+};
 
-export const addEmployee = (data: EmployeeAdd) =>
-  request<{ message: string; user_id: string; password?: string }>(
-    "/corporate/organization/employees",
-    { method: "POST", body: JSON.stringify(data) }
-  );
+let MOCK_EMPLOYEES: (OrgEmployee & { phone?: string; gender?: string })[] = [
+  { user_id: "EMP001", email: "aarav.sharma@travelx.in", role: "admin", orgId: "ORG123", name: "Aarav Sharma", employee_id: "TX-IND-101", department: "Executive", cost_center: "HQ-DEL", phone: "9876543210", gender: "Male" },
+  { user_id: "EMP002", email: "ishaan.verma@travelx.in", role: "employee", orgId: "ORG123", name: "Ishaan Verma", employee_id: "TX-IND-205", department: "Sales", cost_center: "SALES-MUM", phone: "9123456789", gender: "Male" },
+  { user_id: "EMP003", email: "ananya.iyer@travelx.in", role: "employee", orgId: "ORG123", name: "Ananya Iyer", employee_id: "TX-IND-302", department: "Engineering", cost_center: "ENG-BLR", phone: "8877665544", gender: "Female" },
+];
 
-export const getEmployees = () =>
-  request<OrgEmployee[]>("/corporate/organization/employees");
+export const addEmployee = async (data: EmployeeAdd) => {
+  try {
+    return await request<{ message: string; user_id: string; password?: string }>(
+      "/corporate/organization/employees",
+      { method: "POST", body: JSON.stringify(data) }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock add employee.");
+    const newUser: OrgEmployee = {
+      user_id: "EMP" + Math.floor(Math.random() * 1000).toString(),
+      email: data.email,
+      role: data.role as any,
+      orgId: "ORG123",
+      name: data.name,
+      employee_id: data.employee_id,
+      department: data.department,
+      cost_center: data.cost_center
+    };
+    MOCK_EMPLOYEES.push(newUser);
+    return { message: "Employee added successfully (mock)", user_id: newUser.user_id, password: "temp_password_123" };
+  }
+};
 
-export const updateEmployeeRole = (user_id: string, role: string) =>
-  request<{ message: string }>(
-    `/corporate/organization/employees/${user_id}/role`,
-    { method: "PUT", body: JSON.stringify({ role }) }
-  );
+export const getEmployees = async () => {
+  try {
+    return await request<OrgEmployee[]>("/corporate/organization/employees");
+  } catch (err) {
+    console.warn("Backend failed, using mock employees.");
+    return [...MOCK_EMPLOYEES];
+  }
+};
 
-export const removeEmployee = (user_id: string) =>
-  request<{ message: string }>(
-    `/corporate/organization/employees/${user_id}`,
-    { method: "DELETE" }
-  );
+export const updateEmployeeRole = async (user_id: string, role: string) => {
+  try {
+    return await request<{ message: string }>(
+      `/corporate/organization/employees/${user_id}/role`,
+      { method: "PUT", body: JSON.stringify({ role }) }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock update role.");
+    const emp = MOCK_EMPLOYEES.find(e => e.user_id === user_id);
+    if (emp) emp.role = role as any;
+    return { message: "Employee role updated successfully (mock)" };
+  }
+};
+
+export const removeEmployee = async (user_id: string) => {
+  try {
+    return await request<{ message: string }>(
+      `/corporate/organization/employees/${user_id}`,
+      { method: "DELETE" }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock remove employee.");
+    MOCK_EMPLOYEES = MOCK_EMPLOYEES.filter(e => e.user_id !== user_id);
+    return { message: "Employee removed successfully (mock)" };
+  }
+};

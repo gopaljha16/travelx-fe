@@ -2,14 +2,22 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Train, User, ChevronRight, ShieldCheck, Info, Trash2, CheckCircle2, AlertTriangle, MapPin } from "lucide-react";
+import { Train, User, ChevronRight, ShieldCheck, Info, Trash2, CheckCircle2, AlertTriangle, MapPin, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { DUMMY_TRAINS } from "@/app/trains/page";
 import { Train as TrainType } from "@/components/TrainCard";
+import { useAuth } from "@/context/AuthContext";
+import { getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
 
 function TrainReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const id = searchParams.get("id");
   const classType = searchParams.get("class") || "SL";
@@ -35,6 +43,23 @@ function TrainReviewContent() {
   
   const [boardingStation, setBoardingStation] = useState("");
   const [validationError, setValidationError] = useState("");
+
+  const [employees, setEmployees] = useState<OrgEmployee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [orgName, setOrgName] = useState("");
+
+  useEffect(() => {
+    if (user?.corporate_role === 'admin') {
+      getEmployees().then(setEmployees);
+      if (user.organization) {
+        setOrgName(user.organization.name);
+      } else {
+        getMyOrganization().then(org => {
+          if (org) setOrgName(org.name);
+        });
+      }
+    }
+  }, [user]);
 
   // Base mock prices for train
   const basePrice = train?.availability.find(a => a.type === classType)?.price || 450;
@@ -84,7 +109,7 @@ function TrainReviewContent() {
     router.push(`/bookings/payment?amount=${Math.round(total)}&type=train`);
   };
 
-  if (!train) return <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-bold text-slate-500">Loading train details...</div>;
+  if (!mounted || !train) return <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-bold text-slate-500">Loading train details...</div>;
 
   return (
     <div className="bg-[#f8f9fc] min-h-screen font-body text-slate-800">
@@ -148,6 +173,52 @@ function TrainReviewContent() {
 
             <form id="booking-form" onSubmit={handleContinue} className="space-y-6">
               
+              {/* MyBiz Admin Booking Section */}
+              {user?.corporate_role === 'admin' && (
+                <div className="bg-blue-50 rounded-[2rem] p-6 md:p-8 shadow-sm border border-blue-200">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold flex items-center gap-2 text-blue-900">
+                      <Building2 className="text-blue-600" /> Booking on behalf of an Employee?
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">Select an employee from <strong>{orgName || 'your organization'}</strong> to automatically pre-fill details.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-blue-800 mb-2">Select Employee</label>
+                    <select 
+                      value={selectedEmployee} 
+                      onChange={(e) => {
+                        setSelectedEmployee(e.target.value);
+                        if (e.target.value) {
+                           const emp = employees.find(emp => emp.user_id === e.target.value);
+                           if (emp) {
+                             const gender = (emp as any).gender || "Male";
+                             setPassengers(cur => cur.map((p, i) => i === 0 ? { ...p, name: emp.name || emp.email, gender, age: "28" } : p));
+                             setEmail(emp.email);
+                             if ((emp as any).phone) setPhone((emp as any).phone);
+                           }
+                        }
+                      }}
+                      className="w-full bg-white border border-blue-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500 font-bold text-slate-800"
+                    >
+                      <option value="">-- I am booking for myself / New Passenger --</option>
+                      {employees.map(emp => (
+                        <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email} ({emp.employee_id || emp.user_id.slice(-6)})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedEmployee && (
+                    <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-white flex items-start gap-3 animate-in zoom-in-95">
+                       <ShieldCheck size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                       <div>
+                         <p className="text-xs font-black uppercase text-blue-900">Corporate Policy Active</p>
+                         <p className="text-[11px] text-blue-700 mt-0.5">This booking will be settled via the company wallet with full GST benefits.</p>
+                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* IRCTC User ID Verification */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200">
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
@@ -176,6 +247,11 @@ function TrainReviewContent() {
                           <button type="button" onClick={() => removePassenger(idx)} className="text-red-500 hover:text-red-700 text-[11px] uppercase tracking-widest font-black flex items-center gap-1 transition-colors">
                             <Trash2 size={14} /> Remove
                           </button>
+                        )}
+                        {selectedEmployee && idx === 0 && (
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-100">
+                            <ShieldCheck size={12} /> Corporate Employee
+                          </span>
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -320,8 +396,8 @@ function TrainReviewContent() {
                   </div>
                 </div>
 
-                <button form="booking-form" type="submit" className="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-2">
-                  Continue to Pay <ChevronRight size={18} />
+                <button form="booking-form" type="submit" className="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-2 uppercase tracking-wider">
+                  {selectedEmployee ? "Pay with Corporate Wallet" : "Continue to Pay"} <ChevronRight size={18} />
                 </button>
              </div>
           </div>

@@ -149,6 +149,10 @@ export interface OrgEmployee {
   email: string;
   role: "admin" | "manager" | "employee";
   orgId: string;
+  employee_id?: string;
+  department?: string;
+  cost_center?: string;
+  name?: string;
 }
 
 export interface OrgCreate {
@@ -166,6 +170,9 @@ export interface EmployeeAdd {
   name?: string;
   password?: string;
   role: "admin" | "manager" | "employee";
+  employee_id?: string;
+  department?: string;
+  cost_center?: string;
 }
 
 export interface WishlistItem {

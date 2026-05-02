@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Bus, BusBooking, bookBus, getBus, verifyBusPayment } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { BusFront, Loader2 } from "lucide-react";
+import { BusFront, Loader2, Building2, ShieldCheck, Info } from "lucide-react";
+import { Bus, BusBooking, bookBus, getBus, verifyBusPayment, getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
 
 type RazorpayResponse = {
   razorpay_payment_id: string;
@@ -40,6 +40,11 @@ function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const seatNumbers = (searchParams.get("seats") || "").split(",").map(Number).filter(Boolean);
   const pricePerSeat = Number(searchParams.get("price") ?? 0);
@@ -52,6 +57,23 @@ function BookingContent() {
   const [passengers, setPassengers] = useState<{ name: string; age: string; gender: string }[]>([]);
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  
+  const [employees, setEmployees] = useState<OrgEmployee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [orgName, setOrgName] = useState("");
+
+  useEffect(() => {
+    if (user?.corporate_role === 'admin') {
+      getEmployees().then(setEmployees);
+      if (user.organization) {
+        setOrgName(user.organization.name);
+      } else {
+        getMyOrganization().then(org => {
+          if (org) setOrgName(org.name);
+        });
+      }
+    }
+  }, [user]);
 
   const totalPrice = pricePerSeat * seatNumbers.length;
 
@@ -162,7 +184,7 @@ function BookingContent() {
     return isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   };
 
-  if (loading || authLoading) return (
+  if (!mounted || loading || authLoading) return (
     <div className="min-h-screen bg-[#f8f9ff]">
       <Navbar />
       <div className="flex min-h-[80vh] items-center justify-center">
@@ -198,6 +220,58 @@ function BookingContent() {
             </div>
 
             <form onSubmit={handleComplete} className="space-y-8">
+              
+              {/* MyBiz Admin Booking Section */}
+              {user?.corporate_role === 'admin' && (
+                <section className="bg-blue-50 rounded-[2rem] p-8 shadow-sm border border-blue-200 animate-in fade-in slide-in-from-top-4">
+                  <div className="mb-6">
+                    <h3 className="text-xl font-headline font-black flex items-center gap-3 text-blue-900">
+                      <Building2 className="text-blue-600" size={24} /> 
+                      Booking for an Employee?
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-2 font-medium">Select a staff member from <strong>{orgName || 'your organization'}</strong> to auto-fill their details.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-widest text-blue-800 mb-2 ml-1">Select Employee</label>
+                    <div className="relative">
+                       <select 
+                        value={selectedEmployee} 
+                        onChange={(e) => {
+                          setSelectedEmployee(e.target.value);
+                          if (e.target.value) {
+                             const emp = employees.find(emp => emp.user_id === e.target.value);
+                             if (emp) {
+                               const gender = (emp as any).gender || "Male";
+                               setPassengers(cur => cur.map((p, i) => i === 0 ? { ...p, name: emp.name || emp.email, gender } : p));
+                               setContactEmail(emp.email);
+                               if ((emp as any).phone) setContactPhone((emp as any).phone);
+                             }
+                          }
+                        }}
+                        className="w-full bg-white border-2 border-blue-100 rounded-2xl px-5 py-4 text-sm outline-none focus:border-blue-500 font-bold text-slate-800 appearance-none shadow-sm"
+                      >
+                        <option value="">-- Personal Booking / New Guest --</option>
+                        {employees.map(emp => (
+                          <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email} ({emp.employee_id || emp.user_id.slice(-6)})</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400">
+                        <span className="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {selectedEmployee && (
+                    <div className="mt-6 p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-white flex items-start gap-3 animate-in zoom-in-95">
+                       <ShieldCheck size={20} className="text-emerald-500 shrink-0 mt-0.5" />
+                       <div>
+                         <p className="text-xs font-black uppercase tracking-tight text-blue-900">Corporate Policy Active</p>
+                         <p className="text-[11px] text-blue-700 font-medium mt-0.5">This booking will be settled via the company wallet with automated GST invoicing.</p>
+                       </div>
+                    </div>
+                  )}
+                </section>
+              )}
               <section className="space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded-full bg-[#005cab]/10 flex items-center justify-center">
@@ -300,7 +374,7 @@ function BookingContent() {
               >
                 {bookingLoading
                   ? <><Loader2 size={22} className="animate-spin" /> Processing…</>
-                  : <><span className="material-symbols-outlined text-[22px]">lock</span> Pay Securely · ₹{totalPrice.toLocaleString()}</>
+                  : <><span className="material-symbols-outlined text-[22px]">lock</span> {selectedEmployee ? "Pay with Corporate Wallet" : "Pay Securely"} · ₹{totalPrice.toLocaleString()}</>
                 }
               </button>
             </form>
