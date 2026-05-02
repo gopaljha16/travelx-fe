@@ -12,6 +12,7 @@ interface User {
   is_active: boolean;
   must_change_password?: boolean;
   corporate_role?: string;
+  organization?: { name: string; id: string };
 }
 
 interface AuthContextType {

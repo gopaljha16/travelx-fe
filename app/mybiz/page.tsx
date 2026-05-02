@@ -112,10 +112,17 @@ export default function MyBizDashboardPage() {
                 {org?.city && org.state ? `${org.city}, ${org.state}` : org?.email}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/mybiz/portal"
+                className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-primary text-white font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30"
+              >
+                <span className="material-symbols-outlined text-lg">travel_explore</span>
+                Book Corporate Trip
+              </Link>
               <Link
                 href="/mybiz/employees"
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-on-surface font-bold text-sm hover:bg-primary hover:text-white transition-all shadow-lg"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm"
               >
                 <Users size={18} />
                 Manage Employees
