@@ -66,19 +66,24 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              {user?.corporate_role === 'admin' && (
-                <Link 
-                  className={`${pathname?.startsWith('/mybiz') ? 'text-blue-700 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-500 transition-colors'}`} 
-                  href="/mybiz"
-                >
-                  MyBiz
-                </Link>
-              )}
             </div>
           )}
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
+          {/* Dummy MyBiz Entry */}
+          <Link 
+            href="/mybiz/portal" 
+            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-xl border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all group"
+          >
+            <div className="bg-white p-1 rounded-lg shadow-sm">
+               <Briefcase size={14} className="text-blue-600" />
+            </div>
+            <div className="flex flex-col pr-1">
+              <span className="text-[8px] font-black uppercase text-blue-500 leading-none mb-0.5 tracking-wider">Corporate</span>
+              <span className="text-xs font-black text-slate-800 leading-none tracking-wide">myBiz</span>
+            </div>
+          </Link>
           {!user?.must_change_password ? (
             <>
               <Link 
@@ -231,17 +236,15 @@ export default function Navbar() {
                   {wishlistCount > 0 && <span className="ml-auto bg-pink-500 text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg shadow-lg shadow-pink-500/20">{wishlistCount}</span>}
                 </Link>
                 
-                {user?.corporate_role === 'admin' && (
-                  <Link href="/mybiz" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-blue-700 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 transition-all shadow-sm group">
-                     <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
-                        <Briefcase size={22} />
-                     </div>
-                     <div className="flex-1">
-                       <p className="text-[15px] tracking-tight">MyBiz Admin</p>
-                       <p className="text-[9px] text-blue-500 font-black uppercase tracking-[.1em] leading-none mt-1">Corporate Portal</p>
-                     </div>
-                  </Link>
-                )}
+                <Link href="/mybiz/portal" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-800 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 transition-all shadow-sm group">
+                   <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm border border-blue-50">
+                      <Briefcase size={22} />
+                   </div>
+                   <div className="flex-1">
+                     <p className="text-[15px] tracking-tight text-slate-800">myBiz</p>
+                     <p className="text-[9px] text-blue-500 font-black uppercase tracking-[.1em] leading-none mt-1">Corporate Portal</p>
+                   </div>
+                </Link>
               </div>
             </section>
           </div>
