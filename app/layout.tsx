@@ -8,7 +8,7 @@ import AuthModal from "@/components/LoginModal";
 import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 export const metadata: Metadata = {
-  title: "TravelX - Your Digital Concierge",
+  title: "YatraSqure - Your Digital Concierge",
   description: "Find and book hotels and buses across India",
 };
 

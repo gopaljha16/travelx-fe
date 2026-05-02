@@ -96,7 +96,7 @@ export const login = async (email: string, password: string) => {
       if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
       return { message: "Login successful (mock admin)", role: "admin" };
     }
-    if (email === "user@travelx.com" && password === "password123") {
+    if (email === "user@yatrasqure.com" && password === "password123") {
       if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
       return { message: "Login successful (mock user)", role: "user" };
     }
@@ -124,10 +124,10 @@ export const getProfile = async () => {
     const mockEmail = typeof window !== "undefined" ? localStorage.getItem("mock_email") : null;
     if (!mockEmail) throw err;
     
-    if (mockEmail === "user@travelx.com") {
+    if (mockEmail === "user@yatrasqure.com") {
       return {
         id: "dummy_user_123",
-        email: "user@travelx.com",
+        email: "user@yatrasqure.com",
         name: "Normal User",
         role: "user",
         is_active: true
@@ -355,8 +355,8 @@ export const getMyOrganization = async () => {
     console.warn("Backend failed, using mock organization.");
     return {
       id: "ORG123",
-      name: "TravelX India Solutions",
-      email: "corporate@travelx.in",
+      name: "YatraSqure India Solutions",
+      email: "corporate@yatrasqure.in",
       gst_number: "27AAAAA0000A1Z5",
       address: "DLF Cyber City, Tower B",
       city: "Gurugram",
@@ -371,9 +371,9 @@ export const getMyOrganization = async () => {
 };
 
 let MOCK_EMPLOYEES: (OrgEmployee & { phone?: string; gender?: string })[] = [
-  { user_id: "EMP001", email: "aarav.sharma@travelx.in", role: "admin", orgId: "ORG123", name: "Aarav Sharma", employee_id: "TX-IND-101", department: "Executive", cost_center: "HQ-DEL", phone: "9876543210", gender: "Male" },
-  { user_id: "EMP002", email: "ishaan.verma@travelx.in", role: "employee", orgId: "ORG123", name: "Ishaan Verma", employee_id: "TX-IND-205", department: "Sales", cost_center: "SALES-MUM", phone: "9123456789", gender: "Male" },
-  { user_id: "EMP003", email: "ananya.iyer@travelx.in", role: "employee", orgId: "ORG123", name: "Ananya Iyer", employee_id: "TX-IND-302", department: "Engineering", cost_center: "ENG-BLR", phone: "8877665544", gender: "Female" },
+  { user_id: "EMP001", email: "aarav.sharma@yatrasqure.in", role: "admin", orgId: "ORG123", name: "Aarav Sharma", employee_id: "TX-IND-101", department: "Executive", cost_center: "HQ-DEL", phone: "9876543210", gender: "Male" },
+  { user_id: "EMP002", email: "ishaan.verma@yatrasqure.in", role: "employee", orgId: "ORG123", name: "Ishaan Verma", employee_id: "TX-IND-205", department: "Sales", cost_center: "SALES-MUM", phone: "9123456789", gender: "Male" },
+  { user_id: "EMP003", email: "ananya.iyer@yatrasqure.in", role: "employee", orgId: "ORG123", name: "Ananya Iyer", employee_id: "TX-IND-302", department: "Engineering", cost_center: "ENG-BLR", phone: "8877665544", gender: "Female" },
 ];
 
 export const addEmployee = async (data: EmployeeAdd) => {

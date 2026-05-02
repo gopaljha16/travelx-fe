@@ -145,7 +145,7 @@ function BookingContent() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
         amount: bk.total_price * 100,
         currency: "INR",
-        name: "TravelX",
+        name: "YatraSqure",
         description: `Bus: ${bus.from_city} → ${bus.to_city} | Seats: ${seatNumbers.join(", ")}`,
         order_id: bk.razorpay_order_id,
         handler: async (res) => {
@@ -418,8 +418,8 @@ function BookingContent() {
 
       <footer className="bg-slate-50 w-full py-12 px-8 border-t border-slate-100 mt-8">
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-6">
-          <span className="font-bold text-slate-900 font-headline">TravelX</span>
-          <p className="text-slate-400 text-xs">© 2026 TravelX. All rights reserved.</p>
+          <span className="font-bold text-slate-900 font-headline">YatraSqure</span>
+          <p className="text-slate-400 text-xs">© 2026 YatraSqure. All rights reserved.</p>
         </div>
       </footer>
     </div>

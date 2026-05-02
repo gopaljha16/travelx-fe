@@ -76,7 +76,7 @@ export default function MyBizOnboardPage() {
           <div className="max-w-5xl mx-auto relative z-10">
             <span className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-primary-fixed">
               <Building2 size={14} />
-              MyBiz by TravelX
+              MyBiz by YatraSqure
             </span>
             <h1 className="mt-6 font-headline text-4xl sm:text-6xl font-black tracking-tight text-white">
               Register your <span className="text-primary-fixed-dim italic">organisation.</span>
@@ -215,7 +215,7 @@ export default function MyBizOnboardPage() {
               </button>
 
               <p className="text-center text-xs text-on-surface-variant mt-2">
-                By registering, you agree to TravelX&apos;s Corporate Terms of Service.
+                By registering, you agree to YatraSqure&apos;s Corporate Terms of Service.
               </p>
             </form>
           </div>

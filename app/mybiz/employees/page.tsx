@@ -384,7 +384,7 @@ function EmployeeManagementContent() {
                         <div>
                           <p className="font-bold text-on-surface text-sm">Existing Account Linked</p>
                           <p className="mt-1 text-xs text-on-surface-variant font-medium leading-relaxed">
-                            This person already has an existing TravelX consumer account. We have upgraded their account to a Corporate Account without generating a new password. They can simply log in using their normal credentials or OTP.
+                            This person already has an existing YatraSqure consumer account. We have upgraded their account to a Corporate Account without generating a new password. They can simply log in using their normal credentials or OTP.
                           </p>
                         </div>
                       </div>

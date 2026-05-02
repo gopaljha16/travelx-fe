@@ -484,7 +484,7 @@ export default function HomePage() {
               {[
                 { icon: "percent", color: "text-primary", bg: "bg-primary/10", title: "Early Bird 25%", desc: "Book 30 days in advance and save a massive quarter on your stay.", linkText: "Claim Code" },
                 { icon: "flight_takeoff", color: "text-tertiary", bg: "bg-tertiary/10", title: "Bundle & Save", desc: "Combine flight + hotel and get a complimentary spa voucher.", linkText: "Explore Bundle" },
-                { icon: "workspace_premium", color: "text-orange-500", bg: "bg-orange-100", title: "First Ride Free", desc: "Your first bus booking through TravelX is absolutely free up to ₹500.", linkText: "Book Bus" },
+                { icon: "workspace_premium", color: "text-orange-500", bg: "bg-orange-100", title: "First Ride Free", desc: "Your first bus booking through YatraSqure is absolutely free up to ₹500.", linkText: "Book Bus" },
                 { icon: "loyalty", color: "text-primary", bg: "bg-primary/10", title: "Loyalty Multiplier", desc: "Earn 3x points on all bookings made in the next 48 hours.", linkText: "Join Club" },
               ].map((deal, idx) => (
                 <div key={idx} className="bg-surface-container-lowest p-6 rounded-[2rem] border border-white shadow-sm relative overflow-hidden group text-left">
@@ -581,7 +581,7 @@ export default function HomePage() {
                       <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                     ))}
                   </div>
-                  <p className="text-sm italic text-on-surface-variant font-medium">"TravelX changed how I book. The UI is so clean, and the location search is a lifesaver!"</p>
+                  <p className="text-sm italic text-on-surface-variant font-medium">"YatraSqure changed how I book. The UI is so clean, and the location search is a lifesaver!"</p>
                   <p className="mt-4 text-xs font-bold text-on-surface">— Sarah J., Digital Nomad</p>
                 </div>
               </div>
@@ -594,7 +594,7 @@ export default function HomePage() {
       <footer className="bg-slate-50 w-full py-16 border-t border-slate-200 mt-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-12 px-8 max-w-7xl mx-auto text-left">
           <div className="col-span-2 md:col-span-1">
-            <span className="font-headline font-extrabold text-2xl text-primary">TravelX</span>
+            <span className="font-headline font-extrabold text-2xl text-primary">YatraSqure</span>
             <p className="text-sm font-medium text-slate-500 mt-4 leading-relaxed">
               Crafting premium travel experiences through intelligent design and human-centric service.
             </p>
@@ -627,7 +627,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-8 mt-16 pt-8 border-t border-slate-200 text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 TravelX Digital Concierge. Established with Excellence.</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 YatraSqure Digital Concierge. Established with Excellence.</p>
         </div>
       </footer>
 

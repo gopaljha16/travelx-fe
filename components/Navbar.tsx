@@ -53,7 +53,7 @@ export default function Navbar() {
             <Menu size={24} />
           </button>
 
-          <Link href="/" className="text-xl md:text-2xl font-extrabold tracking-tight text-blue-700 font-headline">TravelX</Link>
+          <Link href="/" className="text-xl md:text-2xl font-extrabold tracking-tight text-blue-700 font-headline">YatraSqure</Link>
           
           {!user?.must_change_password && (
             <div className="hidden md:flex items-center gap-8 font-headline text-sm font-medium">

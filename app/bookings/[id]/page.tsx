@@ -53,7 +53,7 @@ function BookingDetailContent() {
 
     if (type === "hotel") {
       const hotel = booking as Booking;
-      return hotel.hotel_name || "TravelX stay";
+      return hotel.hotel_name || "YatraSqure stay";
     }
 
     const bus = booking as BusBooking;
@@ -166,7 +166,7 @@ function BookingDetailContent() {
             </div>
 
             <div className="tx-card p-6">
-              <p className="tx-kicker">TravelX sync</p>
+              <p className="tx-kicker">YatraSqure sync</p>
               <h2 className="mt-2 text-2xl font-black text-slate-900">Real booking record</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 This view is pulled from the same booking endpoints used by your dashboard, so status and payment details stay aligned with the backend.

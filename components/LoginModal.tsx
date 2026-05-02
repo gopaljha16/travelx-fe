@@ -146,7 +146,7 @@ export default function LoginModal() {
           
           <div className="absolute bottom-6 left-0 right-0 px-6">
             <div className="bg-white rounded-xl p-4 text-center shadow-lg mx-auto w-[90%]">
-              <p className="text-[10px] font-bold tracking-widest text-[#008cff] uppercase mb-1">TravelX Summer Sale:</p>
+              <p className="text-[10px] font-bold tracking-widest text-[#008cff] uppercase mb-1">YatraSqure Summer Sale:</p>
               <h3 className="font-extrabold text-slate-900 leading-tight">
                 Up to 40% OFF* on Packages, Flights, Stays & More.
               </h3>
@@ -384,7 +384,7 @@ export default function LoginModal() {
                </Link>
             </div>
             <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
-              By proceeding, you agree to TravelX's <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>, <span className="text-primary cursor-pointer hover:underline">User Agreement</span> and <span className="text-primary cursor-pointer hover:underline">T&Cs</span>
+              By proceeding, you agree to YatraSqure's <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>, <span className="text-primary cursor-pointer hover:underline">User Agreement</span> and <span className="text-primary cursor-pointer hover:underline">T&Cs</span>
             </p>
           </div>
 

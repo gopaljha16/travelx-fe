@@ -255,8 +255,8 @@ export default function BookingConfirmationPage() {
       <footer className="w-full py-12 mt-auto bg-slate-50 border-t border-[#c0c7d6]/10">
         <div className="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <span className="text-lg font-bold text-slate-900 font-headline tracking-tight">TravelX</span>
-            <p className="text-sm text-slate-500">© 2026 TravelX Digital Concierge. All rights reserved.</p>
+            <span className="text-lg font-bold text-slate-900 font-headline tracking-tight">YatraSqure</span>
+            <p className="text-sm text-slate-500">© 2026 YatraSqure Digital Concierge. All rights reserved.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
             {["Privacy Policy", "Terms of Service", "Help Center", "Partner with us"].map(l => (
