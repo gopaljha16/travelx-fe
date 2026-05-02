@@ -44,7 +44,24 @@ function FlightReviewContent() {
 
   useEffect(() => {
     if (user?.corporate_role === 'admin') {
-      getEmployees().then(setEmployees);
+      getEmployees().then(list => {
+        setEmployees(list);
+        if (typeof window !== 'undefined') {
+          const savedId = sessionStorage.getItem('selectedEmployeeId');
+          if (savedId) {
+            const emp = list.find(e => e.user_id === savedId);
+            if (emp) {
+              setSelectedEmployee(savedId);
+              const names = (emp.name || "").split(" ");
+              const firstName = names[0] || "";
+              const lastName = names.slice(1).join(" ") || "";
+              setPassengers(cur => cur.map((p, i) => i === 0 ? { ...p, firstName, lastName, gender: (emp as any).gender || "" } : p));
+              setEmail(emp.email);
+              if ((emp as any).phone) setPhone((emp as any).phone);
+            }
+          }
+        }
+      });
       if (user.organization) {
         setOrgName(user.organization.name);
       } else {
@@ -179,51 +196,7 @@ function FlightReviewContent() {
 
             <form id="booking-form" onSubmit={handleContinue} className="space-y-6">
               
-              {/* MyBiz Admin Booking Section */}
-              {user?.corporate_role === 'admin' && (
-                <div className="bg-blue-50 rounded-[2rem] p-6 md:p-8 shadow-sm border border-blue-200">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold flex items-center gap-2 text-blue-900">
-                      <Building2 className="text-blue-600" /> Booking on behalf of an Employee?
-                    </h3>
-                    <p className="text-sm text-blue-700 mt-1">Select an employee from <strong>{orgName || 'your organization'}</strong> to automatically pre-fill details.</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-blue-800 mb-2">Select Employee</label>
-                    <select 
-                      value={selectedEmployee} 
-                      onChange={(e) => {
-                        setSelectedEmployee(e.target.value);
-                        if (e.target.value) {
-                           const emp = employees.find(emp => emp.user_id === e.target.value);
-                            if (emp) {
-                              const names = (emp.name || "").split(" ");
-                              const firstName = names[0] || "";
-                              const lastName = names.slice(1).join(" ") || "";
-                              const gender = (emp as any).gender || "";
-                              
-                              setPassengers(cur => cur.map((p, i) => i === 0 ? { 
-                                ...p, 
-                                firstName, 
-                                lastName, 
-                                gender 
-                              } : p));
-                              
-                              setEmail(emp.email);
-                              if ((emp as any).phone) setPhone((emp as any).phone);
-                            }
-                        }
-                      }}
-                      className="w-full bg-white border border-blue-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500 font-bold text-slate-800"
-                    >
-                      <option value="">-- I am booking for myself / New Passenger --</option>
-                      {employees.map(emp => (
-                        <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email} ({emp.employee_id || emp.user_id.slice(-6)})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
+
 
               {/* Traveler Details */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200">

@@ -50,7 +50,21 @@ function TrainReviewContent() {
 
   useEffect(() => {
     if (user?.corporate_role === 'admin') {
-      getEmployees().then(setEmployees);
+      getEmployees().then(list => {
+        setEmployees(list);
+        if (typeof window !== 'undefined') {
+          const savedId = sessionStorage.getItem('selectedEmployeeId');
+          if (savedId) {
+            const emp = list.find(e => e.user_id === savedId);
+            if (emp) {
+              setSelectedEmployee(savedId);
+              setPassengers(cur => cur.map((p, i) => i === 0 ? { ...p, name: emp.name || emp.email, gender: (emp as any).gender || "Male", age: "28" } : p));
+              setEmail(emp.email);
+              if ((emp as any).phone) setPhone((emp as any).phone);
+            }
+          }
+        }
+      });
       if (user.organization) {
         setOrgName(user.organization.name);
       } else {
@@ -173,51 +187,7 @@ function TrainReviewContent() {
 
             <form id="booking-form" onSubmit={handleContinue} className="space-y-6">
               
-              {/* MyBiz Admin Booking Section */}
-              {user?.corporate_role === 'admin' && (
-                <div className="bg-blue-50 rounded-[2rem] p-6 md:p-8 shadow-sm border border-blue-200">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold flex items-center gap-2 text-blue-900">
-                      <Building2 className="text-blue-600" /> Booking on behalf of an Employee?
-                    </h3>
-                    <p className="text-sm text-blue-700 mt-1">Select an employee from <strong>{orgName || 'your organization'}</strong> to automatically pre-fill details.</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-blue-800 mb-2">Select Employee</label>
-                    <select 
-                      value={selectedEmployee} 
-                      onChange={(e) => {
-                        setSelectedEmployee(e.target.value);
-                        if (e.target.value) {
-                           const emp = employees.find(emp => emp.user_id === e.target.value);
-                           if (emp) {
-                             const gender = (emp as any).gender || "Male";
-                             setPassengers(cur => cur.map((p, i) => i === 0 ? { ...p, name: emp.name || emp.email, gender, age: "28" } : p));
-                             setEmail(emp.email);
-                             if ((emp as any).phone) setPhone((emp as any).phone);
-                           }
-                        }
-                      }}
-                      className="w-full bg-white border border-blue-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500 font-bold text-slate-800"
-                    >
-                      <option value="">-- I am booking for myself / New Passenger --</option>
-                      {employees.map(emp => (
-                        <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email} ({emp.employee_id || emp.user_id.slice(-6)})</option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {selectedEmployee && (
-                    <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-white flex items-start gap-3 animate-in zoom-in-95">
-                       <ShieldCheck size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-                       <div>
-                         <p className="text-xs font-black uppercase text-blue-900">Corporate Policy Active</p>
-                         <p className="text-[11px] text-blue-700 mt-0.5">This booking will be settled via the company wallet with full GST benefits.</p>
-                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
               
               {/* IRCTC User ID Verification */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200">

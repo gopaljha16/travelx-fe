@@ -127,32 +127,6 @@ export default function LoginModal() {
     }, 500);
   };
 
-  const handleDummyNormalLogin = () => {
-    setUser({
-      id: "dummy_normal_123",
-      role: "user",
-      email: "user@example.com",
-      name: "Normal User",
-      is_onboarded: true,
-      is_active: true,
-      corporate_role: undefined
-    });
-    closeAndReset();
-  };
-
-  const handleDummyAdminLogin = () => {
-    setUser({
-      id: "dummy_admin_456",
-      role: "user",
-      email: "admin@acme.com",
-      name: "Acme Admin",
-      is_onboarded: true,
-      is_active: true,
-      corporate_role: "admin"
-    });
-    closeAndReset();
-  };
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-[850px] bg-white rounded-xl overflow-hidden shadow-2xl relative transform transition-all animate-in zoom-in-95 duration-200 flex flex-col md:flex-row h-auto md:h-[600px]">
@@ -240,7 +214,7 @@ export default function LoginModal() {
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         className="w-full py-3 px-4 text-slate-900 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal text-sm"
-                        placeholder={loginMethod === "OTP" ? "Enter Mobile Number or Email" : "Enter your email"}
+                        placeholder={loginMethod === "OTP" ? "Enter Mobile Number or Email" : "Enter Corporate Email Address"}
                         autoFocus
                         required
                       />
@@ -281,21 +255,19 @@ export default function LoginModal() {
                     </button>
                   </div>
                 )}
-
-                <div className="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-4">
-                  <button 
+                <div className="mt-8 flex flex-col gap-3">
+                   <div className="relative">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+                      <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-slate-400"><span className="bg-white px-2">Corporate Portal</span></div>
+                   </div>
+                   
+                   <button 
                     type="button" 
-                    onClick={handleDummyNormalLogin}
-                    className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-md hover:bg-slate-200 text-xs transition-colors"
+                    onClick={() => { setLoginMethod("PASSWORD"); setAuthMode("LOGIN"); }}
+                    className="w-full bg-blue-50 text-blue-700 border border-blue-100 font-bold py-3.5 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
                   >
-                    Login as Normal User
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handleDummyAdminLogin}
-                    className="w-full bg-blue-50 text-blue-700 border border-blue-100 font-bold py-2.5 rounded-md hover:bg-blue-100 text-xs transition-colors"
-                  >
-                    Login as MyBiz Admin
+                    <Building2 size={18} />
+                    Login to MyBiz
                   </button>
                 </div>
               </div>
