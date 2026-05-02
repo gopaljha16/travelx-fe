@@ -9,10 +9,10 @@ export default function ContactPage() {
       <section className="tx-shell py-10">
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[36px] bg-[linear-gradient(135deg,#ff6b35_0%,#ff884d_100%)] p-8 text-white sm:p-10">
-            <p className="tx-kicker text-orange-100">Contact TravelX</p>
+            <p className="tx-kicker text-orange-100">Contact YatraSqure</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Need help with a booking?</h1>
             <p className="mt-4 text-sm leading-7 text-white/80 sm:text-base">
-              Reach the TravelX support team for buses, hotels, payments, and booking issues.
+              Reach the YatraSqure support team for buses, hotels, payments, and booking issues.
             </p>
 
             <div className="mt-8 space-y-4">
@@ -21,7 +21,7 @@ export default function ContactPage() {
                   <Mail size={16} />
                   Email
                 </div>
-                <p className="mt-2 text-sm text-white/80">support@travelx.com</p>
+                <p className="mt-2 text-sm text-white/80">support@yatrasqure.com</p>
               </div>
               <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
                 <div className="inline-flex items-center gap-2 text-sm font-bold">
@@ -49,7 +49,7 @@ export default function ContactPage() {
             <form className="mt-6 space-y-4">
               <input className="tx-input" type="text" placeholder="Your name" />
               <input className="tx-input" type="email" placeholder="Your email" />
-              <textarea className="min-h-[180px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#ff6b35] focus:ring-4 focus:ring-orange-100" placeholder="How can TravelX help?" />
+              <textarea className="min-h-[180px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#ff6b35] focus:ring-4 focus:ring-orange-100" placeholder="How can YatraSqure help?" />
               <button type="submit" className="tx-button-primary">
                 Send message
               </button>

@@ -78,7 +78,7 @@ export default function ForcePasswordChangeModal() {
           </div>
           <h2 className="text-xl font-black text-slate-900 tracking-tight">Security Update</h2>
           <p className="text-slate-500 font-medium text-xs mt-1 leading-relaxed px-4">
-            Please set your private password to access TravelX.
+            Please set your private password to access YatraSqure.
           </p>
         </div>
 
@@ -172,7 +172,7 @@ export default function ForcePasswordChangeModal() {
         )}
 
         <div className="mt-6 text-center">
-            <p className="text-[9px] text-slate-300 font-bold tracking-widest uppercase italic">TravelX Enterprise Security</p>
+            <p className="text-[9px] text-slate-300 font-bold tracking-widest uppercase italic">YatraSqure Enterprise Security</p>
         </div>
       </div>
     </div>

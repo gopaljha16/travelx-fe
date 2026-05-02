@@ -261,7 +261,7 @@ export default function BookingsPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 p-4 backdrop-blur-md">
           <div className="w-full max-w-md scale-in rounded-[3rem] bg-surface p-8 shadow-2xl border border-outline-variant/10">
             <h2 className="font-headline text-3xl font-black text-on-surface">Leave a Review</h2>
-            <p className="mt-2 text-on-surface-variant">How was your stay at TravelX?</p>
+            <p className="mt-2 text-on-surface-variant">How was your stay at YatraSqure?</p>
             
             <div className="mt-8 flex justify-center gap-3">
               {[1, 2, 3, 4, 5].map((value) => (
@@ -371,7 +371,7 @@ function HotelBookingCard({
           </div>
         </div>
 
-        <h3 className="font-headline text-2xl font-black text-on-surface">{booking.hotel_name || "TravelX stay"}</h3>
+        <h3 className="font-headline text-2xl font-black text-on-surface">{booking.hotel_name || "YatraSqure stay"}</h3>
         <p className="mt-3 text-sm font-medium text-on-surface-variant leading-relaxed line-clamp-2">
           {booking.room_type_name} • {booking.num_rooms} room(s) for {booking.num_guests} guests. Full itinerary details available in the concierge view.
         </p>

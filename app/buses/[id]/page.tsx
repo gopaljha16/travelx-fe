@@ -303,7 +303,7 @@ export default function BusDetailPage() {
                 <span className="material-symbols-outlined text-emerald-600 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               </div>
               <div>
-                <p className="text-xs font-bold text-[#0f1c2c]">TravelX Secure Booking</p>
+                <p className="text-xs font-bold text-[#0f1c2c]">YatraSqure Secure Booking</p>
                 <p className="text-[10px] text-[#404754]">Instant confirmation & 24/7 support.</p>
               </div>
             </div>
@@ -315,8 +315,8 @@ export default function BusDetailPage() {
       <footer className="w-full py-12 px-8 border-t border-slate-100 bg-slate-50 mt-4">
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-6 text-sm">
           <div>
-            <span className="font-bold text-slate-900 font-headline">TravelX</span>
-            <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">© 2026 TravelX. All rights reserved.</p>
+            <span className="font-bold text-slate-900 font-headline">YatraSqure</span>
+            <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">© 2026 YatraSqure. All rights reserved.</p>
           </div>
           <div className="flex gap-8">
             {["Privacy Policy", "Terms of Service", "Fleet Info", "Contact"].map(l => (

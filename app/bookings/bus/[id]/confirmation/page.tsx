@@ -61,7 +61,7 @@ export default function BusConfirmationPage() {
             <span className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
           </div>
           <h1 className="text-5xl font-headline font-extrabold tracking-tight text-[#0f1c2c] mb-4">Booking Successful!</h1>
-          <p className="text-[#404754] text-lg font-medium">Your journey with TravelX has been confirmed. Pack your bags!</p>
+          <p className="text-[#404754] text-lg font-medium">Your journey with YatraSqure has been confirmed. Pack your bags!</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -132,7 +132,7 @@ export default function BusConfirmationPage() {
                 <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 mt-2 border-t border-[#c0c7d6]/15">
                   <div>
                     <span className="text-[10px] font-label uppercase tracking-tighter text-[#404754] font-bold">Operator</span>
-                    <div className="text-sm font-headline font-bold mt-1">{booking.bus_name ?? "TravelX Bus"}</div>
+                    <div className="text-sm font-headline font-bold mt-1">{booking.bus_name ?? "YatraSqure Bus"}</div>
                   </div>
                   <div>
                     <span className="text-[10px] font-label uppercase tracking-tighter text-[#404754] font-bold">Class</span>
@@ -191,7 +191,7 @@ export default function BusConfirmationPage() {
             {/* Digital concierge */}
             <div className="bg-[#eef4ff] rounded-2xl p-6 border-l-4 border-[#005cab]">
               <span className="material-symbols-outlined text-[#005cab] text-[24px] mb-3 block" style={{ fontVariationSettings: "'FILL' 1" }}>concierge</span>
-              <h3 className="font-headline font-bold text-[#0f1c2c] mb-2">The TravelX Promise</h3>
+              <h3 className="font-headline font-bold text-[#0f1c2c] mb-2">The YatraSqure Promise</h3>
               <p className="text-sm text-[#404754] leading-relaxed">Your digital concierge is active. We&apos;ll notify you of any schedule changes before departure.</p>
             </div>
 
@@ -214,13 +214,13 @@ export default function BusConfirmationPage() {
 
       <footer className="bg-slate-50 w-full py-12 px-8 border-t border-slate-100 mt-auto">
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-6">
-          <span className="font-bold text-slate-900 font-headline">TravelX</span>
+          <span className="font-bold text-slate-900 font-headline">YatraSqure</span>
           <div className="flex flex-wrap justify-center gap-8">
             {["Privacy Policy", "Terms of Service", "Fleet Info", "Contact"].map(l => (
               <a key={l} href="#" className="text-slate-400 text-xs uppercase tracking-widest hover:text-[#005cab] transition-colors">{l}</a>
             ))}
           </div>
-          <p className="text-slate-400 text-xs">© 2026 TravelX. All rights reserved.</p>
+          <p className="text-slate-400 text-xs">© 2026 YatraSqure. All rights reserved.</p>
         </div>
       </footer>
     </div>

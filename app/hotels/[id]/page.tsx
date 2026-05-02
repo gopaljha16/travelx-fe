@@ -533,13 +533,13 @@ export default function HotelDetailPage() {
 {/* ── FOOTER ────────────────────────────────────────────── */}
       <div className="w-full py-12 bg-slate-50 text-sm border-t border-slate-200/50">
         <div className="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
-          <div className="text-lg font-bold text-slate-900">TravelX</div>
+          <div className="text-lg font-bold text-slate-900">YatraSqure</div>
           <div className="flex flex-wrap justify-center gap-6">
             {["Privacy Policy", "Terms of Service", "Help Center", "Partner with us"].map(l => (
               <a key={l} href="#" className="text-slate-500 hover:text-slate-900 transition-colors underline decoration-blue-500/30 underline-offset-4">{l}</a>
             ))}
           </div>
-          <div className="text-slate-500">© 2026 TravelX. All rights reserved.</div>
+          <div className="text-slate-500">© 2026 YatraSqure. All rights reserved.</div>
         </div>
       </div>
     </div>

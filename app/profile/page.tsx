@@ -90,7 +90,7 @@ export default function ProfilePage() {
                   <span className="text-sm font-semibold">{user.is_active ? "Verified and Active" : "Action Required"}</span>
                 </div>
                 <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Your identity is secured and synchronized across all TravelX services.
+                  Your identity is secured and synchronized across all YatraSqure services.
                 </p>
               </div>
             </div>

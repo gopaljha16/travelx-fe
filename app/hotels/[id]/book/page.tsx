@@ -154,7 +154,7 @@ function BookingContent() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
         amount: booking.total_price * 100,
         currency: "INR",
-        name: "TravelX",
+        name: "YatraSqure",
         description: `Stay at ${hotel.name} — ${roomName}`,
         order_id: booking.razorpay_order_id,
         handler: async (res) => {
