@@ -103,6 +103,8 @@ export default function Navbar() {
                 </span>
                 <span className="hidden md:inline text-[10px] uppercase font-bold mt-1 tracking-tight">Wishlist</span>
               </Link>
+              
+
 
               {user ? (
                 <div className="flex items-center gap-2">

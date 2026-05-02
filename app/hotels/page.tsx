@@ -7,6 +7,7 @@ import HotelCard from "@/components/HotelCard";
 import { Hotel, searchHotels } from "@/lib/api";
 import { Loader2, MapPin, Search, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
 import dynamic from "next/dynamic";
 
 // Dynamic import for the map component to avoid SSR issues
@@ -79,6 +80,17 @@ function HotelsContent() {
   const [isLateCheckOut, setIsLateCheckOut] = useState(false);
   const [isPayAtHotel, setIsPayAtHotel] = useState(false);
   const [guestRating, setGuestRating] = useState<number | undefined>();
+
+  // Corporate
+  const { user } = useAuth();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+
+  useEffect(() => {
+    if (user?.corporate_role === 'admin') {
+      import('@/lib/api').then(api => api.getEmployees()).then(setEmployees);
+    }
+  }, [user]);
 
   const fetchHotels = useCallback(async () => {
     setLoading(true);
@@ -393,6 +405,28 @@ function HotelsContent() {
               </select>
             </div>
           </div>
+
+          {user?.corporate_role === 'admin' && (
+            <div className="flex-1 bg-blue-50 border border-blue-200 hover:border-blue-400 rounded-xl flex items-center px-4 py-2 group transition-colors w-full shadow-inner relative">
+              <span className="material-symbols-outlined text-blue-600 mr-3 font-bold">corporate_fare</span>
+              <div className="flex flex-col w-full">
+                <label className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">Booking For</label>
+                <select 
+                  value={selectedEmployeeId}
+                  onChange={(e) => {
+                    setSelectedEmployeeId(e.target.value);
+                    if (typeof window !== 'undefined') sessionStorage.setItem('selectedEmployeeId', e.target.value);
+                  }}
+                  className="bg-transparent border-none outline-none text-sm font-bold text-blue-900 cursor-pointer p-0 w-full appearance-none"
+                >
+                  <option value="">Myself</option>
+                  {employees.map(emp => (
+                    <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-4 md:py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
             Update

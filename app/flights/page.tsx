@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, Plane } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import FlightCard, { Flight } from "@/components/FlightCard";
+import { useAuth } from "@/context/AuthContext";
+import { getEmployees } from "@/lib/api";
 
 
 
@@ -36,6 +38,21 @@ function FlightsContent() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [sortBy, setSortBy] = useState("recommended");
+
+  // Corporate
+  const { user } = useAuth();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+
+  useEffect(() => {
+    if (user?.corporate_role === 'admin') {
+      getEmployees().then(setEmployees);
+      if (typeof window !== 'undefined') {
+        const saved = sessionStorage.getItem('selectedEmployeeId');
+        if (saved) setSelectedEmployeeId(saved);
+      }
+    }
+  }, [user]);
 
   const fetchFlights = useCallback(async () => {
     setLoading(true);
@@ -187,6 +204,28 @@ function FlightsContent() {
               />
             </div>
           </div>
+
+          {user?.corporate_role === 'admin' && (
+            <div className="flex-1 bg-blue-50 border border-blue-200 hover:border-blue-400 rounded-xl flex items-center px-4 py-2 group transition-colors w-full shadow-inner relative">
+              <span className="material-symbols-outlined text-blue-600 mr-3 font-bold">corporate_fare</span>
+              <div className="flex flex-col w-full">
+                <label className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">Booking For</label>
+                <select 
+                  value={selectedEmployeeId}
+                  onChange={(e) => {
+                    setSelectedEmployeeId(e.target.value);
+                    if (typeof window !== 'undefined') sessionStorage.setItem('selectedEmployeeId', e.target.value);
+                  }}
+                  className="bg-transparent border-none outline-none text-sm font-bold text-blue-900 cursor-pointer p-0 w-full appearance-none"
+                >
+                  <option value="">Myself</option>
+                  {employees.map(emp => (
+                    <option key={emp.user_id} value={emp.user_id}>{emp.name || emp.email}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <button type="submit" className="bg-primary hover:bg-blue-700 text-white font-bold px-10 py-4 md:py-5 rounded-xl transition-colors shrink-0 w-full lg:w-auto text-sm shadow-md">
             Update
