@@ -183,7 +183,7 @@ function ReviewContent() {
 
 export default function ReviewPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-bold text-slate-500 italic">Initializing Review...</div>}>
       <ReviewContent />
     </Suspense>
   );

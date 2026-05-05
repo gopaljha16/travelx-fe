@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { BusFront, Loader2, Building2, ShieldCheck, Info } from "lucide-react";
 import { Bus, BusBooking, bookBus, getBus, verifyBusPayment, getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
+import { saveApprovalRequest } from "@/lib/mock-requests";
 
 type RazorpayResponse = {
   razorpay_payment_id: string;
@@ -53,6 +54,7 @@ function BookingContent() {
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
 
   const [passengers, setPassengers] = useState<{ name: string; age: string; gender: string }[]>([]);
   const [contactEmail, setContactEmail] = useState("");
@@ -136,6 +138,34 @@ function BookingContent() {
     setBookingLoading(true);
     setError("");
     try {
+      if (user.corporate_role === 'employee' || user.role === 'employee') {
+        const emp = employees.find(e => e.email === user.email);
+        const limit = emp?.spending_limit || 10000;
+        const requiresDual = totalPrice > limit;
+        
+        saveApprovalRequest({
+          id: 'REQ-' + Math.floor(Math.random() * 10000),
+          employee_id: user.id,
+          employee_name: user.name || user.email || 'Employee',
+          type: 'bus',
+          details: `${bus.from_city} → ${bus.to_city} · ${bus.bus_type} · ${seatNumbers.length} Seat(s)`,
+          travel_date: bus.journey_date,
+          amount: totalPrice,
+          spending_limit: limit,
+          requires_dual_approval: requiresDual,
+          manager_id: emp?.manager_id || 'MGR-001',
+          senior_manager_id: emp?.senior_manager_id || 'SMGR-001',
+          manager_approved: false,
+          senior_manager_approved: false,
+          status: 'pending_manager',
+          submitted_at: new Date().toISOString()
+        });
+        
+        setRequestSent(true);
+        setBookingLoading(false);
+        return;
+      }
+
       const ok = await loadRazorpay();
       if (!ok || !window.Razorpay) throw new Error("Razorpay SDK failed to load.");
 
@@ -233,6 +263,23 @@ function BookingContent() {
               <p className="text-[#404754] mt-2">Confirm passenger details and secure your journey.</p>
             </div>
 
+            {requestSent ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center animate-in zoom-in duration-300">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck size={32} />
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-800 mb-2">Request Sent Successfully!</h2>
+                <p className="text-emerald-700 mb-6 max-w-md mx-auto">
+                  Your travel request for {bus.from_city} to {bus.to_city} has been sent to your manager for approval.
+                  {totalPrice > (employees.find(e => e.email === user?.email)?.spending_limit || 10000) && 
+                    <span className="block mt-2 font-semibold">Since this exceeds your spending limit, both your manager and senior manager must approve.</span>
+                  }
+                </p>
+                <button onClick={() => router.push('/bookings')} className="voyage-button px-6 py-3 rounded-xl text-white font-bold bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                  View My Requests
+                </button>
+              </div>
+            ) : (
             <form onSubmit={handleComplete} className="space-y-8">
               
 
@@ -318,16 +365,18 @@ function BookingContent() {
                 </div>
               </section>
 
-              <div className="bg-[#eef4ff] rounded-2xl px-6 py-4 flex items-center gap-4 border border-[#c0c7d6]/20">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-                  <span className="material-symbols-outlined text-[#005cab] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+              {(user?.corporate_role !== 'employee' && user?.role !== 'employee') && (
+                <div className="bg-[#eef4ff] rounded-2xl px-6 py-4 flex items-center gap-4 border border-[#c0c7d6]/20">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                    <span className="material-symbols-outlined text-[#005cab] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#0f1c2c]">Secure Payment via Razorpay</p>
+                    <p className="text-xs text-[#404754]">UPI, Credit/Debit Card, Netbanking and Wallets — choose on the next step.</p>
+                  </div>
+                  <div className="ml-auto text-xs font-bold text-[#404754] bg-white px-3 py-1.5 rounded-full border border-[#c0c7d6]/30 shrink-0">256-bit SSL</div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-[#0f1c2c]">Secure Payment via Razorpay</p>
-                  <p className="text-xs text-[#404754]">UPI, Credit/Debit Card, Netbanking and Wallets — choose on the next step.</p>
-                </div>
-                <div className="ml-auto text-xs font-bold text-[#404754] bg-white px-3 py-1.5 rounded-full border border-[#c0c7d6]/30 shrink-0">256-bit SSL</div>
-              </div>
+              )}
 
               {error && (
                 <div className="rounded-xl border border-red-100 bg-red-50 px-5 py-3 text-sm font-semibold text-red-600">{error}</div>
@@ -338,10 +387,11 @@ function BookingContent() {
               >
                 {bookingLoading
                   ? <><Loader2 size={22} className="animate-spin" /> Processing…</>
-                  : <><span className="material-symbols-outlined text-[22px]">lock</span> {selectedEmployee ? "Pay with Corporate Wallet" : "Pay Securely"} · ₹{totalPrice.toLocaleString()}</>
+                  : <><span className="material-symbols-outlined text-[22px]">lock</span> {(user?.corporate_role === 'employee' || user?.role === 'employee') ? "Send for Approval" : (selectedEmployee ? "Pay with Corporate Wallet" : "Pay Securely")} · ₹{totalPrice.toLocaleString()}</>
                 }
               </button>
             </form>
+            )}
           </div>
 
           <aside className="lg:col-span-4 sticky top-28">

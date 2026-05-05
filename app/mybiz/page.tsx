@@ -120,13 +120,24 @@ export default function MyBizDashboardPage() {
                 <span className="material-symbols-outlined text-lg">travel_explore</span>
                 Book Corporate Trip
               </Link>
-              <Link
-                href="/mybiz/employees"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm"
-              >
-                <Users size={18} />
-                Manage Employees
-              </Link>
+              {(user?.corporate_role === 'admin' || user?.corporate_role === 'manager' || user?.corporate_role === 'senior_manager') && (
+                <Link
+                  href="/mybiz/manager"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition-all border border-amber-400 backdrop-blur-sm"
+                >
+                  <span className="material-symbols-outlined text-lg">fact_check</span>
+                  Manager Dashboard
+                </Link>
+              )}
+              {user?.corporate_role === 'admin' && (
+                <Link
+                  href="/mybiz/employees"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm"
+                >
+                  <Users size={18} />
+                  Manage Employees
+                </Link>
+              )}
             </div>
           </div>
         </section>
@@ -211,10 +222,11 @@ export default function MyBizDashboardPage() {
               <div className="p-5 space-y-3">
                 {[
                   { href: "/mybiz/portal", icon: <span className="material-symbols-outlined text-base leading-none">travel_explore</span>, label: "Corporate Booking Portal", sub: "Book Flights, Hotels & more", color: "text-blue-600", bg: "bg-blue-50" },
-                  { href: "/mybiz/employees", icon: <Users size={18} />, label: "Manage Employees", sub: "Add, update roles, remove", color: "text-primary", bg: "bg-primary/10" },
-                  { href: "/mybiz/employees?add=true", icon: <span className="material-symbols-outlined text-base leading-none">person_add</span>, label: "Add New Employee", sub: "Invite or create account", color: "text-emerald-600", bg: "bg-emerald-50" },
+                  { href: "/mybiz/my-requests", icon: <span className="material-symbols-outlined text-base leading-none">assignment</span>, label: "My Requests", sub: "Track your pending approvals", color: "text-purple-600", bg: "bg-purple-50" },
+                  { href: "/mybiz/employees", icon: <Users size={18} />, label: "Manage Employees", sub: "Add, update roles, remove", color: "text-primary", bg: "bg-primary/10", hide: user?.corporate_role !== 'admin' },
+                  { href: "/mybiz/employees?add=true", icon: <span className="material-symbols-outlined text-base leading-none">person_add</span>, label: "Add New Employee", sub: "Invite or create account", color: "text-emerald-600", bg: "bg-emerald-50", hide: user?.corporate_role !== 'admin' },
                   { href: "/bookings", icon: <span className="material-symbols-outlined text-base leading-none">luggage</span>, label: "View All Trips", sub: "Hotel & bus bookings", color: "text-tertiary", bg: "bg-tertiary/10" },
-                ].map((action) => (
+                ].filter(a => !a.hide).map((action) => (
                   <Link
                     key={action.href}
                     href={action.href}
