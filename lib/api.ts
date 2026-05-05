@@ -487,6 +487,20 @@ export const updateEmployeeRole = async (user_id: string, role: string) => {
   }
 };
 
+export const updateEmployeeManager = async (user_id: string, manager_id: string) => {
+  try {
+    return await request<{ message: string }>(
+      `/corporate/organization/employees/${user_id}/manager`,
+      { method: "PUT", body: JSON.stringify({ manager_id }) }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock update manager.");
+    const emp = MOCK_EMPLOYEES.find(e => e.user_id === user_id);
+    if (emp) emp.manager_id = manager_id;
+    return { message: "Employee manager updated successfully (mock)" };
+  }
+};
+
 export const removeEmployee = async (user_id: string) => {
   try {
     return await request<{ message: string }>(

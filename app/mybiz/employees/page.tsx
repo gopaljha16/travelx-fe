@@ -1,4 +1,5 @@
 "use client";
+// Trigger Next.js hot reload
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +9,7 @@ import {
   getEmployees,
   addEmployee,
   updateEmployeeRole,
+  updateEmployeeManager,
   removeEmployee,
   OrgEmployee,
   EmployeeAdd
@@ -45,6 +47,8 @@ function EmployeeManagementContent() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successInfo, setSuccessInfo] = useState<{ message: string; email: string; password?: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pendingRoleChanges, setPendingRoleChanges] = useState<Record<string, string>>({});
+  const [pendingManagerChanges, setPendingManagerChanges] = useState<Record<string, string>>({});
 
   // Form State
   const [newEmployee, setNewEmployee] = useState<EmployeeAdd>({
@@ -100,11 +104,33 @@ function EmployeeManagementContent() {
     }
   };
 
+  const handleUpdateManager = async (userId: string, newManagerId: string) => {
+    setActionLoading(userId);
+    try {
+      await updateEmployeeManager(userId, newManagerId);
+      setEmployees(prev => prev.map(emp => emp.user_id === userId ? { ...emp, manager_id: newManagerId } : emp));
+      setPendingManagerChanges(prev => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+    } catch (err: any) {
+      alert(err.message || "Failed to update manager.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleUpdateRole = async (userId: string, newRole: string) => {
     setActionLoading(userId);
     try {
       await updateEmployeeRole(userId, newRole);
       setEmployees(prev => prev.map(emp => emp.user_id === userId ? { ...emp, role: newRole as any } : emp));
+      setPendingRoleChanges(prev => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
     } catch (err: any) {
       alert(err.message || "Failed to update role.");
     } finally {
@@ -209,6 +235,7 @@ function EmployeeManagementContent() {
                       <tr>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Employee</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Identity</th>
+                        <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Reporting To</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Role</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant text-right">Actions</th>
                       </tr>
@@ -236,14 +263,41 @@ function EmployeeManagementContent() {
                           </td>
                           <td className="px-8 py-6">
                             <select 
-                              value={emp.role}
+                              value={pendingManagerChanges[emp.user_id] ?? emp.manager_id ?? ""}
+                              className="text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-none outline-none cursor-pointer transition-all bg-surface-container-high text-on-surface-variant max-w-[200px] text-ellipsis"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === (emp.manager_id || "")) {
+                                  setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                } else {
+                                  setPendingManagerChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                                }
+                              }}
+                              disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                            >
+                              <option value="">None</option>
+                              {employees.filter(e => (e.role === 'manager' || e.role === 'senior_manager' || e.role === 'admin') && e.user_id !== emp.user_id).map(m => (
+                                <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-8 py-6">
+                            <select 
+                              value={pendingRoleChanges[emp.user_id] || emp.role}
                               className={`text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-none outline-none cursor-pointer transition-all ${
-                                emp.role === 'admin' ? 'bg-primary/10 text-primary' : 
-                                emp.role === 'senior_manager' ? 'bg-orange-50 text-orange-600' :
-                                emp.role === 'manager' ? 'bg-tertiary/10 text-tertiary' : 
+                                (pendingRoleChanges[emp.user_id] || emp.role) === 'admin' ? 'bg-primary/10 text-primary' : 
+                                (pendingRoleChanges[emp.user_id] || emp.role) === 'senior_manager' ? 'bg-orange-50 text-orange-600' :
+                                (pendingRoleChanges[emp.user_id] || emp.role) === 'manager' ? 'bg-tertiary/10 text-tertiary' : 
                                 'bg-surface-container-high text-on-surface-variant'
                               }`}
-                              onChange={(e) => handleUpdateRole(emp.user_id, e.target.value)}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === emp.role) {
+                                  setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                } else {
+                                  setPendingRoleChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                                }
+                              }}
                               disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
                             >
                               <option value="employee">Employee</option>
@@ -254,13 +308,43 @@ function EmployeeManagementContent() {
                           </td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex justify-end gap-2">
-                               <button 
-                                  onClick={() => handleRemove(emp.user_id)}
-                                  disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id}
-                                  className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-0"
-                               >
-                                 {actionLoading === emp.user_id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                               </button>
+                               {((pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) || 
+                                 (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || ""))) ? (
+                                 <>
+                                   <button 
+                                     onClick={() => {
+                                       setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                       setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                     }}
+                                     disabled={actionLoading === emp.user_id}
+                                     className="px-4 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-[11px] font-black uppercase tracking-widest hover:bg-surface-container-highest transition-all flex items-center gap-2 disabled:opacity-50"
+                                   >
+                                     <X size={14} /> Cancel
+                                   </button>
+                                   <button 
+                                     onClick={async () => {
+                                       if (pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) {
+                                         await handleUpdateRole(emp.user_id, pendingRoleChanges[emp.user_id]);
+                                       }
+                                       if (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) {
+                                         await handleUpdateManager(emp.user_id, pendingManagerChanges[emp.user_id]);
+                                       }
+                                     }}
+                                     disabled={actionLoading === emp.user_id}
+                                     className="px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
+                                   >
+                                     {actionLoading === emp.user_id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Save
+                                   </button>
+                                 </>
+                               ) : (
+                                 <button 
+                                    onClick={() => handleRemove(emp.user_id)}
+                                    disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id}
+                                    className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors disabled:opacity-0"
+                                 >
+                                   {actionLoading === emp.user_id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                 </button>
+                               )}
                                {emp.user_id === currentUser?.id && (
                                  <span className="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant/40 py-2">You</span>
                                )}
@@ -288,11 +372,18 @@ function EmployeeManagementContent() {
                         </div>
                       </div>
                       <select 
-                        value={emp.role}
+                        value={pendingRoleChanges[emp.user_id] || emp.role}
                         className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg border-none outline-none cursor-pointer ${
-                          emp.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'
+                          (pendingRoleChanges[emp.user_id] || emp.role) === 'admin' ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'
                         }`}
-                        onChange={(e) => handleUpdateRole(emp.user_id, e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === emp.role) {
+                            setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                          } else {
+                            setPendingRoleChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                          }
+                        }}
                         disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
                       >
                         <option value="employee">Employee</option>
@@ -312,18 +403,72 @@ function EmployeeManagementContent() {
                           {emp.department} • {emp.cost_center}
                         </p>
                       )}
+                      
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Reporting To</span>
+                        <select 
+                          value={pendingManagerChanges[emp.user_id] ?? emp.manager_id ?? ""}
+                          className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border-none outline-none cursor-pointer bg-surface-container-high text-on-surface-variant max-w-[160px] text-ellipsis"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === (emp.manager_id || "")) {
+                              setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                            } else {
+                              setPendingManagerChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                            }
+                          }}
+                          disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                        >
+                          <option value="">None</option>
+                          {employees.filter(e => (e.role === 'manager' || e.role === 'senior_manager' || e.role === 'admin') && e.user_id !== emp.user_id).map(m => (
+                            <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     
                     {emp.user_id !== currentUser?.id && (
-                      <div className="mt-4 flex justify-end">
-                        <button 
-                          onClick={() => handleRemove(emp.user_id)}
-                          disabled={actionLoading === emp.user_id}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-500 font-bold text-[11px] uppercase tracking-wider"
-                        >
-                          {actionLoading === emp.user_id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                          Remove
-                        </button>
+                      <div className="mt-4 flex justify-end gap-2">
+                        {((pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) || 
+                          (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || ""))) ? (
+                          <>
+                            <button 
+                              onClick={() => {
+                                setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                              }}
+                              disabled={actionLoading === emp.user_id}
+                              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface-variant font-bold text-[11px] uppercase tracking-wider disabled:opacity-50"
+                            >
+                              <X size={12} />
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) {
+                                  await handleUpdateRole(emp.user_id, pendingRoleChanges[emp.user_id]);
+                                }
+                                if (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) {
+                                  await handleUpdateManager(emp.user_id, pendingManagerChanges[emp.user_id]);
+                                }
+                              }}
+                              disabled={actionLoading === emp.user_id}
+                              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold text-[11px] uppercase tracking-wider shadow-lg shadow-primary/20 disabled:opacity-50"
+                            >
+                              {actionLoading === emp.user_id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                              Save
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => handleRemove(emp.user_id)}
+                            disabled={actionLoading === emp.user_id}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-500 font-bold text-[11px] uppercase tracking-wider"
+                          >
+                            {actionLoading === emp.user_id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                            Remove
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -336,7 +481,7 @@ function EmployeeManagementContent() {
         {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/40 backdrop-blur-md animate-in fade-in">
-            <div className="w-full max-w-xl bg-surface rounded-[3rem] shadow-2xl border border-outline-variant/10 overflow-hidden scale-in">
+            <div className="w-full max-w-xl bg-surface rounded-[3rem] shadow-2xl border border-outline-variant/10 overflow-hidden scale-in flex flex-col max-h-[90vh]">
               <div className="bg-surface-container-low px-8 py-6 border-b border-outline-variant/10 flex items-center justify-between">
                 <div>
                   <h2 className="font-headline text-2xl font-black text-on-surface">Add Team Member</h2>
@@ -350,7 +495,7 @@ function EmployeeManagementContent() {
                 </button>
               </div>
 
-              <div className="p-8">
+              <div className="p-8 overflow-y-auto custom-scrollbar">
                 {successInfo ? (
                   <div className="text-center">
                     <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center mx-auto mb-6">
