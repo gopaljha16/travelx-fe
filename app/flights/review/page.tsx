@@ -8,6 +8,7 @@ import { DUMMY_FLIGHTS } from "@/app/flights/page";
 import { Flight } from "@/components/FlightCard";
 import { useAuth } from "@/context/AuthContext";
 import { getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
+import { saveApprovalRequest } from "@/lib/mock-requests";
 
 function FlightReviewContent() {
   const searchParams = useSearchParams();
@@ -37,6 +38,7 @@ function FlightReviewContent() {
 
   const [showCancellation, setShowCancellation] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
 
   const [employees, setEmployees] = useState<OrgEmployee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -96,6 +98,7 @@ function FlightReviewContent() {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!flight) return;
     setValidationError("");
 
     for (const p of passengers) {
@@ -113,6 +116,33 @@ function FlightReviewContent() {
     if (hasGST && (!gstName || !gstNumber || !gstEmail)) {
       setValidationError("Please complete all GST details.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (user && (user.corporate_role === 'employee' || user.role === 'employee')) {
+      const emp = employees.find(e => e.email === user.email);
+      const limit = emp?.spending_limit || 10000;
+      const requiresDual = total > limit;
+      
+      saveApprovalRequest({
+        id: 'REQ-' + Math.floor(Math.random() * 10000),
+        employee_id: user.id,
+        employee_name: user.name || user.email || 'Employee',
+        type: 'flight',
+        details: `${flight.airline} (${flight.flight_number}) · ${flight.departure_time}`,
+        travel_date: '28 APR', // Hardcoded date in flight for now
+        amount: total,
+        spending_limit: limit,
+        requires_dual_approval: requiresDual,
+        manager_id: emp?.manager_id || 'MGR-001',
+        senior_manager_id: emp?.senior_manager_id || 'SMGR-001',
+        manager_approved: false,
+        senior_manager_approved: false,
+        status: 'pending_manager',
+        submitted_at: new Date().toISOString()
+      });
+      
+      setRequestSent(true);
       return;
     }
 
@@ -138,6 +168,24 @@ function FlightReviewContent() {
           {/* Left Column - Forms */}
           <div className="flex-1 space-y-6">
             
+            {requestSent ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center animate-in zoom-in duration-300">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck size={32} />
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-800 mb-2">Request Sent Successfully!</h2>
+                <p className="text-emerald-700 mb-6 max-w-md mx-auto">
+                  Your travel request for {flight?.airline} has been sent to your manager for approval.
+                  {total > (employees.find(e => e.email === user?.email)?.spending_limit || 10000) && 
+                    <span className="block mt-2 font-semibold">Since this exceeds your spending limit, both your manager and senior manager must approve.</span>
+                  }
+                </p>
+                <button onClick={() => router.push('/bookings')} className="voyage-button px-6 py-3 rounded-xl text-white font-bold bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                  View My Requests
+                </button>
+              </div>
+            ) : (
+            <>
             {/* Trip Summary Card */}
             <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200 relative">
               <button onClick={() => setShowCancellation(!showCancellation)} className="absolute top-6 right-6 text-xs font-bold text-blue-600 hover:underline">
@@ -149,25 +197,25 @@ function FlightReviewContent() {
                   <Plane size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">{flight.airline} ({flight.flight_number})</h2>
+                  <h2 className="text-xl font-bold text-slate-900">{flight?.airline} ({flight?.flight_number})</h2>
                   <p className="text-sm text-slate-500 font-medium">Economy • Non-stop</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
                 <div>
-                  <p className="font-black text-xl">{flight.departure_time}</p>
+                  <p className="font-black text-xl">{flight?.departure_time}</p>
                   <p className="text-sm text-slate-500">28 APR</p>
                   <p className="text-xs font-bold text-slate-400 mt-1">Origin</p>
                 </div>
                 <div className="flex-1 px-8 relative">
                    <div className="h-px bg-slate-200 w-full"></div>
                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs font-bold text-slate-400">
-                     {flight.duration}
+                     {flight?.duration}
                    </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-xl">{flight.arrival_time}</p>
+                  <p className="font-black text-xl">{flight?.arrival_time}</p>
                   <p className="text-sm text-slate-500">28 APR</p>
                   <p className="text-xs font-bold text-slate-400 mt-1">Destination</p>
                 </div>
@@ -366,6 +414,8 @@ function FlightReviewContent() {
                  )}
               </div>
             </form>
+            </>
+            )}
           </div>
 
           {/* Right Column - Fare Summary */}
@@ -403,9 +453,13 @@ function FlightReviewContent() {
                 <button
                   type="submit"
                   form="booking-form"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all text-lg uppercase tracking-wider mt-6"
+                  disabled={requestSent}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all text-lg uppercase tracking-wider mt-6"
                 >
-                  {selectedEmployee ? "Pay with Corporate Wallet" : "Proceed to Payment"}
+                  {(user?.corporate_role === 'employee' || user?.role === 'employee') 
+                      ? "Send for Approval" 
+                      : (selectedEmployee ? "Pay with Corporate Wallet" : "Proceed to Payment")
+                  }
                 </button>
              </div>
           </div>
@@ -417,7 +471,7 @@ function FlightReviewContent() {
 
 export default function FlightReviewPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-bold text-slate-500 italic"><Plane className="animate-bounce mr-2" /> Initializing Flight Review...</div>}>
       <FlightReviewContent />
     </Suspense>
   );

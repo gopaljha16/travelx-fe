@@ -147,12 +147,16 @@ export interface Organization {
 export interface OrgEmployee {
   user_id: string;
   email: string;
-  role: "admin" | "manager" | "employee";
+  role: "admin" | "manager" | "senior_manager" | "employee";
+  corporate_role?: string;
   orgId: string;
   employee_id?: string;
   department?: string;
   cost_center?: string;
   name?: string;
+  manager_id?: string;
+  senior_manager_id?: string;
+  spending_limit?: number;
 }
 
 export interface OrgCreate {
@@ -169,10 +173,13 @@ export interface EmployeeAdd {
   email: string;
   name?: string;
   password?: string;
-  role: "admin" | "manager" | "employee";
+  role: "admin" | "manager" | "senior_manager" | "employee";
   employee_id?: string;
   department?: string;
   cost_center?: string;
+  manager_id?: string;
+  senior_manager_id?: string;
+  spending_limit?: number;
 }
 
 export interface WishlistItem {

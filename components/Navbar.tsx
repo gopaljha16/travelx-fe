@@ -72,7 +72,7 @@ export default function Navbar() {
         
         <div className="flex items-center gap-2 md:gap-4">
           {/* Dummy MyBiz Entry */}
-          {user?.corporate_role && (
+          {user?.corporate_role && user.corporate_role !== 'employee' && (
             <Link 
               href="/mybiz" 
               className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-xl border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all group"
@@ -240,7 +240,7 @@ export default function Navbar() {
                   {wishlistCount > 0 && <span className="ml-auto bg-pink-500 text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg shadow-lg shadow-pink-500/20">{wishlistCount}</span>}
                 </Link>
                 
-                {user?.corporate_role && (
+                {user?.corporate_role && user.corporate_role !== 'employee' && (
                   <Link href="/mybiz" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-800 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 transition-all shadow-sm group">
                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm border border-blue-50">
                         <Briefcase size={22} />

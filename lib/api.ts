@@ -100,6 +100,18 @@ export const login = async (email: string, password: string) => {
       if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
       return { message: "Login successful (mock user)", role: "user" };
     }
+    if (email === "emp@acme.com" && password === "password123") {
+      if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
+      return { message: "Login successful", role: "employee" };
+    }
+    if (email === "mgr@acme.com" && password === "password123") {
+      if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
+      return { message: "Login successful", role: "manager" };
+    }
+    if (email === "smgr@acme.com" && password === "password123") {
+      if (typeof window !== "undefined") localStorage.setItem("mock_email", email);
+      return { message: "Login successful", role: "senior_manager" };
+    }
     throw err;
   }
 };
@@ -141,6 +153,42 @@ export const getProfile = async () => {
         name: "Acme Admin",
         role: "admin",
         corporate_role: "admin",
+        is_active: true,
+        organization: { id: "ORG123", name: "Acme Corp Ltd." }
+      } as any;
+    }
+
+    if (mockEmail === "emp@acme.com") {
+      return {
+        id: "EMP-001",
+        email: "emp@acme.com",
+        name: "John Employee",
+        role: "employee",
+        corporate_role: "employee",
+        is_active: true,
+        organization: { id: "ORG123", name: "Acme Corp Ltd." }
+      } as any;
+    }
+
+    if (mockEmail === "mgr@acme.com") {
+      return {
+        id: "MGR-001",
+        email: "mgr@acme.com",
+        name: "Sarah Manager",
+        role: "manager",
+        corporate_role: "manager",
+        is_active: true,
+        organization: { id: "ORG123", name: "Acme Corp Ltd." }
+      } as any;
+    }
+
+    if (mockEmail === "smgr@acme.com") {
+      return {
+        id: "SMGR-001",
+        email: "smgr@acme.com",
+        name: "Robert Senior Mgr",
+        role: "senior_manager",
+        corporate_role: "senior_manager",
         is_active: true,
         organization: { id: "ORG123", name: "Acme Corp Ltd." }
       } as any;
@@ -232,7 +280,14 @@ export const verifyPayment = (data: {
   razorpay_signature: string;
 }) => request<Booking>("/bookings/verify-payment", { method: "POST", body: JSON.stringify(data) });
 
-export const getMyBookings = () => request<Booking[]>("/bookings/");
+export const getMyBookings = async () => {
+  try {
+    return await request<Booking[]>("/bookings/");
+  } catch (err) {
+    console.warn("Backend failed, using mock empty hotel bookings.");
+    return [];
+  }
+};
 export const getBooking = (id: string) => request<Booking>(`/bookings/${id}`);
 export const cancelBooking = (id: string) => request<Booking>(`/bookings/${id}/cancel`, { method: "POST" });
 
@@ -289,10 +344,16 @@ export const verifyBusPayment = (data: {
   razorpay_signature: string;
 }) => request<BusBooking>("/buses/verify-payment", { method: "POST", body: JSON.stringify(data) });
 
-export const getMyBusBookings = (page = 1, limit = 10) =>
-  request<{ bookings: BusBooking[]; total: number; page: number; limit: number }>(
-    `/buses/bookings/?page=${page}&limit=${limit}`
-  );
+export const getMyBusBookings = async (page = 1, limit = 10) => {
+  try {
+    return await request<{ bookings: BusBooking[]; total: number; page: number; limit: number }>(
+      `/buses/bookings/?page=${page}&limit=${limit}`
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock empty bus bookings.");
+    return { bookings: [], total: 0, page, limit };
+  }
+};
 
 export const getBusBooking = (id: string) => request<BusBooking>(`/buses/bookings/${id}`);
 export const cancelBusBooking = (id: string) => request<BusBooking>(`/buses/bookings/${id}/cancel`, { method: "POST" });
@@ -371,9 +432,10 @@ export const getMyOrganization = async () => {
 };
 
 let MOCK_EMPLOYEES: (OrgEmployee & { phone?: string; gender?: string })[] = [
+  { user_id: "EMP-001", email: "emp@acme.com", role: "employee", corporate_role: "employee", orgId: "ORG123", name: "John Employee", employee_id: "ACME-EMP-001", department: "Engineering", cost_center: "ENG-HQ", manager_id: "MGR-001", senior_manager_id: "SMGR-001", spending_limit: 15000, phone: "9876543210", gender: "Male" },
+  { user_id: "MGR-001", email: "mgr@acme.com", role: "manager", corporate_role: "manager", orgId: "ORG123", name: "Sarah Manager", employee_id: "ACME-MGR-001", department: "Engineering", cost_center: "ENG-HQ", manager_id: "SMGR-001", spending_limit: 50000, phone: "9123456789", gender: "Female" },
+  { user_id: "SMGR-001", email: "smgr@acme.com", role: "senior_manager", corporate_role: "senior_manager", orgId: "ORG123", name: "Robert Senior Mgr", employee_id: "ACME-SMGR-001", department: "Engineering", cost_center: "ENG-HQ", spending_limit: 100000, phone: "8877665544", gender: "Male" },
   { user_id: "EMP001", email: "aarav.sharma@yatrasqure.in", role: "admin", orgId: "ORG123", name: "Aarav Sharma", employee_id: "TX-IND-101", department: "Executive", cost_center: "HQ-DEL", phone: "9876543210", gender: "Male" },
-  { user_id: "EMP002", email: "ishaan.verma@yatrasqure.in", role: "employee", orgId: "ORG123", name: "Ishaan Verma", employee_id: "TX-IND-205", department: "Sales", cost_center: "SALES-MUM", phone: "9123456789", gender: "Male" },
-  { user_id: "EMP003", email: "ananya.iyer@yatrasqure.in", role: "employee", orgId: "ORG123", name: "Ananya Iyer", employee_id: "TX-IND-302", department: "Engineering", cost_center: "ENG-BLR", phone: "8877665544", gender: "Female" },
 ];
 
 export const addEmployee = async (data: EmployeeAdd) => {
@@ -392,7 +454,10 @@ export const addEmployee = async (data: EmployeeAdd) => {
       name: data.name,
       employee_id: data.employee_id,
       department: data.department,
-      cost_center: data.cost_center
+      cost_center: data.cost_center,
+      manager_id: data.manager_id,
+      senior_manager_id: data.senior_manager_id,
+      spending_limit: data.spending_limit
     };
     MOCK_EMPLOYEES.push(newUser);
     return { message: "Employee added successfully (mock)", user_id: newUser.user_id, password: "temp_password_123" };

@@ -54,7 +54,10 @@ function EmployeeManagementContent() {
     password: "",
     employee_id: "",
     department: "",
-    cost_center: ""
+    cost_center: "",
+    manager_id: "",
+    senior_manager_id: "",
+    spending_limit: 10000
   });
 
   const fetchData = async () => {
@@ -88,7 +91,7 @@ function EmployeeManagementContent() {
     try {
       const res = await addEmployee(newEmployee);
       setSuccessInfo({ message: res.message, email: newEmployee.email, password: res.password });
-      setNewEmployee({ email: "", name: "", role: "employee", password: "", employee_id: "", department: "", cost_center: "" });
+      setNewEmployee({ email: "", name: "", role: "employee", password: "", employee_id: "", department: "", cost_center: "", manager_id: "", senior_manager_id: "", spending_limit: 10000 });
       fetchData();
     } catch (err: any) {
       setError(err.message || "Failed to add employee.");
@@ -236,14 +239,17 @@ function EmployeeManagementContent() {
                               value={emp.role}
                               className={`text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-none outline-none cursor-pointer transition-all ${
                                 emp.role === 'admin' ? 'bg-primary/10 text-primary' : 
+                                emp.role === 'senior_manager' ? 'bg-orange-50 text-orange-600' :
                                 emp.role === 'manager' ? 'bg-tertiary/10 text-tertiary' : 
                                 'bg-surface-container-high text-on-surface-variant'
                               }`}
                               onChange={(e) => handleUpdateRole(emp.user_id, e.target.value)}
-                              disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id}
+                              disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
                             >
                               <option value="employee">Employee</option>
-                              <option value="admin">Admin</option>
+                              <option value="manager">Manager</option>
+                              <option value="senior_manager">Senior Mgr</option>
+                              {emp.role === 'admin' && <option value="admin">Admin</option>}
                             </select>
                           </td>
                           <td className="px-8 py-6 text-right">
@@ -287,10 +293,12 @@ function EmployeeManagementContent() {
                           emp.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'
                         }`}
                         onChange={(e) => handleUpdateRole(emp.user_id, e.target.value)}
-                        disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id}
+                        disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
                       >
                         <option value="employee">Employee</option>
-                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="senior_manager">Senior Mgr</option>
+                        {emp.role === 'admin' && <option value="admin">Admin</option>}
                       </select>
                     </div>
                     
@@ -473,9 +481,9 @@ function EmployeeManagementContent() {
                       </div>
 
                       <div className="space-y-2">
-                         <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Organisation Role</label>
-                         <div className="grid grid-cols-2 gap-3">
-                           {['employee', 'admin'].map((role) => (
+                         <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Organisation Role *</label>
+                         <div className="grid grid-cols-3 gap-3">
+                           {['employee', 'manager', 'senior_manager'].map((role) => (
                              <button
                                key={role}
                                type="button"
@@ -486,10 +494,54 @@ function EmployeeManagementContent() {
                                  : 'bg-surface-container-low border-outline-variant/10 text-on-surface-variant hover:bg-surface-container-high'
                                }`}
                              >
-                               {role}
+                               {role.replace('_', ' ')}
                              </button>
                            ))}
                          </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Reporting Manager *</label>
+                          <select 
+                            required
+                            className="w-full bg-surface-container-low border-none rounded-2xl py-4 px-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface outline-none appearance-none"
+                            value={newEmployee.manager_id}
+                            onChange={(e) => setNewEmployee({...newEmployee, manager_id: e.target.value})}
+                          >
+                            <option value="">Select Manager</option>
+                            {employees.filter(e => e.role === 'manager' || e.role === 'senior_manager' || e.role === 'admin').map(m => (
+                              <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Senior Reporting Manager *</label>
+                          <select 
+                            required
+                            className="w-full bg-surface-container-low border-none rounded-2xl py-4 px-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface outline-none appearance-none"
+                            value={newEmployee.senior_manager_id}
+                            onChange={(e) => setNewEmployee({...newEmployee, senior_manager_id: e.target.value})}
+                          >
+                            <option value="">Select Sr. Manager</option>
+                            {employees.filter(e => e.role === 'senior_manager' || e.role === 'admin').map(m => (
+                              <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Monthly Spending Limit (₹) *</label>
+                        <input 
+                          type="number"
+                          required
+                          min="0"
+                          placeholder="e.g. 10000"
+                          className="w-full bg-surface-container-low border-none rounded-2xl py-4 px-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface outline-none"
+                          value={newEmployee.spending_limit}
+                          onChange={(e) => setNewEmployee({...newEmployee, spending_limit: Number(e.target.value)})}
+                        />
                       </div>
                     </div>
 

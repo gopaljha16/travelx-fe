@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Booking, BusBooking, cancelBooking, cancelBusBooking, getMyBookings, getMyBusBookings, submitReview } from "@/lib/api";
+import { getEmployeeRequests, TravelRequest } from "@/lib/mock-requests";
 import { useAuth } from "@/context/AuthContext";
-import { BusFront, Calendar, Hotel, Loader2, MapPin, Star, TicketX, ChevronRight, Clock, Info, CheckCircle2, XCircle, Luggage } from "lucide-react";
+import { BusFront, Calendar, Hotel, Loader2, MapPin, Star, TicketX, ChevronRight, Clock, Info, CheckCircle2, XCircle, Luggage, Briefcase, Plane, Train } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -35,9 +36,10 @@ export default function BookingsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const [tab, setTab] = useState<"hotels" | "buses">("hotels");
+  const [tab, setTab] = useState<"hotels" | "buses" | "flights" | "trains" | "requests">("hotels");
   const [hotelBookings, setHotelBookings] = useState<Booking[]>([]);
   const [busBookings, setBusBookings] = useState<BusBooking[]>([]);
+  const [requests, setRequests] = useState<TravelRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
@@ -52,10 +54,15 @@ export default function BookingsPage() {
     }
 
     if (user) {
-      Promise.all([getMyBookings(), getMyBusBookings()])
-        .then(([hotels, buses]) => {
+      Promise.all([
+        getMyBookings(), 
+        getMyBusBookings(),
+        user.corporate_role === 'employee' ? Promise.resolve(getEmployeeRequests(user.id)) : Promise.resolve([])
+      ])
+        .then(([hotels, buses, reqs]) => {
           setHotelBookings(hotels);
           setBusBookings(buses.bookings);
+          setRequests(reqs);
         })
         .catch((error: unknown) => {
           setFeedback(error instanceof Error ? error.message : "Failed to load bookings");
@@ -164,6 +171,28 @@ export default function BookingsPage() {
                   <span className="text-sm">Hotels</span>
                 </button>
                 <button
+                  onClick={() => setTab("flights")}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
+                    tab === "flights"
+                      ? "bg-white text-on-surface font-bold shadow-lg"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <Plane size={18} />
+                  <span className="text-sm">Flights</span>
+                </button>
+                <button
+                  onClick={() => setTab("trains")}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
+                    tab === "trains"
+                      ? "bg-white text-on-surface font-bold shadow-lg"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <Train size={18} />
+                  <span className="text-sm">Trains</span>
+                </button>
+                <button
                   onClick={() => setTab("buses")}
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
                     tab === "buses"
@@ -174,6 +203,19 @@ export default function BookingsPage() {
                   <BusFront size={18} />
                   <span className="text-sm">Buses</span>
                 </button>
+                {user?.corporate_role === 'employee' && (
+                  <button
+                    onClick={() => setTab("requests")}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all ${
+                      tab === "requests"
+                        ? "bg-white text-on-surface font-bold shadow-lg"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <Briefcase size={18} />
+                    <span className="text-sm">Approvals</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -222,7 +264,25 @@ export default function BookingsPage() {
                   )}
                 />
               </>
-            ) : (
+            ) : tab === "flights" ? (
+              <>
+                <BookingGroup
+                  title="Upcoming Flights"
+                  emptyMessage="No flight bookings yet."
+                  items={[]}
+                  renderItem={() => null}
+                />
+              </>
+            ) : tab === "trains" ? (
+              <>
+                <BookingGroup
+                  title="Upcoming Train Journeys"
+                  emptyMessage="No train bookings yet."
+                  items={[]}
+                  renderItem={() => null}
+                />
+              </>
+            ) : tab === "buses" ? (
               <>
                 <BookingGroup
                   title="Upcoming Bus Trips"
@@ -248,6 +308,17 @@ export default function BookingsPage() {
                       onCancel={cancelBusReservation}
                       onOpen={() => router.push(`/bookings/${booking.id}?type=bus`)}
                     />
+                  )}
+                />
+              </>
+            ) : (
+              <>
+                <BookingGroup
+                  title="Corporate Approval Requests"
+                  emptyMessage="You have no pending or past approval requests."
+                  items={requests}
+                  renderItem={(req) => (
+                    <RequestCard key={req.id} req={req} />
                   )}
                 />
               </>
@@ -493,4 +564,69 @@ function splitBookings<T>(bookings: T[], getDate: (booking: T) => string) {
   });
 
   return { upcoming, past };
+}
+
+function RequestCard({ req }: { req: TravelRequest }) {
+  const isPending = req.status === "pending_manager" || req.status === "pending_senior_manager";
+  const isApproved = req.status === "approved";
+  const isRejected = req.status === "rejected";
+
+  let statusClass = "bg-slate-50 text-slate-600 border-slate-200";
+  let statusText = "Pending";
+
+  if (isApproved) {
+    statusClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    statusText = "Approved";
+  } else if (isRejected) {
+    statusClass = "bg-red-50 text-red-600 border-red-200";
+    statusText = "Rejected";
+  } else if (isPending) {
+    statusClass = "bg-orange-50 text-orange-700 border-orange-200 shadow-sm animate-pulse";
+    statusText = req.status === "pending_manager" ? "Awaiting Manager" : "Awaiting Senior Manager";
+  }
+
+  return (
+    <article className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] bg-white border border-outline-variant/5 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+               <Briefcase size={18} className="text-indigo-600" />
+             </div>
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{req.type}</p>
+               <p className="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                 <Calendar size={12} /> {new Date(req.submitted_at).toLocaleDateString()}
+               </p>
+             </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>
+              {statusText}
+            </span>
+          </div>
+        </div>
+
+        <h3 className="font-headline text-2xl font-black text-on-surface">
+          {req.type === "flight" ? `Flight Booking Request` : 
+           req.type === "hotel" ? `Hotel Stay Request` : 
+           req.type === "train" ? `Train Travel Request` : `Bus Travel Request`}
+        </h3>
+        
+        <div className="mt-4 flex flex-col gap-2">
+           <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</span>
+             <span className="text-sm font-black text-slate-900">₹{req.amount.toLocaleString()}</span>
+           </div>
+           {req.rejection_reason && (
+             <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-red-700 text-sm font-medium">
+               <span className="font-bold text-xs uppercase tracking-wider block mb-1">Rejection Reason:</span>
+               {req.rejection_reason}
+             </div>
+           )}
+        </div>
+      </div>
+    </article>
+  );
 }
