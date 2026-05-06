@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
-import { getApprovalRequests, updateApprovalRequest, TravelRequest } from "@/lib/mock-requests";
+import { getApprovalRequests, updateApprovalRequest, saveApprovalRequest, TravelRequest } from "@/lib/mock-requests";
 import { Loader2, CheckCircle2, XCircle, Info, Plane, Building, Bus, Train, FileText } from "lucide-react";
 import Link from "next/link";
 
@@ -14,57 +14,63 @@ export default function ManagerDashboard() {
   const [requests, setRequests] = useState<TravelRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
+  const [showDebug, setShowDebug] = useState(false);
+  const [showAll, setShowAll] = useState(false); // Debug mode to see all requests in system
+  const [logs, setLogs] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      openLogin();
-      router.push("/");
-      return;
-    }
-    if (user) {
-      if (user.corporate_role !== 'manager' && user.corporate_role !== 'senior_manager' && user.corporate_role !== 'admin') {
-        router.push("/mybiz");
-        return;
-      }
-      loadRequests();
-    }
-  }, [user, authLoading, router, openLogin]);
-
-  const loadRequests = () => {
-    setLoading(true);
-    const allReqs = getApprovalRequests();
-    
-    // Filter requests where this user is the manager or senior manager
-    const myReqs = allReqs.filter(r => 
-      r.manager_id === user?.id || r.senior_manager_id === user?.id
-    );
-    setRequests(myReqs);
-    setLoading(false);
+  const addLog = (msg: string) => {
+    setLogs(prev => [new Date().toLocaleTimeString() + ': ' + msg, ...prev].slice(0, 5));
   };
 
-  const handleApprove = (req: TravelRequest) => {
-    const isSeniorManager = req.senior_manager_id === user?.id;
-    const isManager = req.manager_id === user?.id;
+  // Define helper functions first to avoid hoisting/initialization errors
+  const loadRequests = useCallback(() => {
+    const allReqs = getApprovalRequests();
+    
+    // Admins see everything. Managers/Sr Managers see only their assigned requests.
+    const myReqs = (user?.corporate_role === 'admin' || showAll)
+      ? allReqs 
+      : allReqs.filter(r => {
+          const mId = (r.manager_id || "").trim().toLowerCase();
+          const sId = (r.senior_manager_id || "").trim().toLowerCase();
+          const uId = (user?.id || "").trim().toLowerCase();
+          return mId === uId || sId === uId;
+        });
+    
+    if (user) {
+      addLog(`Loaded ${myReqs.length} requests (Total: ${allReqs.length})`);
+    }
+        
+    setRequests(myReqs);
+  }, [user, showAll]);
 
-    if (isSeniorManager && req.status === 'pending_senior_manager') {
+  const handleApprove = (req: TravelRequest) => {
+    const isSeniorManager = req.senior_manager_id === user?.id || user?.corporate_role === 'admin';
+    const isManager = req.manager_id === user?.id || user?.corporate_role === 'admin';
+
+    if (req.status === 'pending_senior_manager' && isSeniorManager) {
       updateApprovalRequest(req.id, { 
         senior_manager_approved: true,
         status: 'approved'
       });
-    } else if (isManager && req.status === 'pending_manager') {
+      addLog(`Approved ${req.id} (Senior Manager)`);
+    } else if (req.status === 'pending_manager' && isManager) {
       if (req.requires_dual_approval) {
         updateApprovalRequest(req.id, { 
           manager_approved: true,
           status: 'pending_senior_manager'
         });
+        addLog(`Approved ${req.id} (Forwarded to Sr Mgr)`);
       } else {
         updateApprovalRequest(req.id, { 
           manager_approved: true,
           status: 'approved'
         });
+        addLog(`Approved ${req.id} (Final)`);
       }
     }
-    loadRequests();
+    
+    // Force immediate reload after approval
+    setTimeout(() => loadRequests(), 100);
   };
 
   const handleReject = (req: TravelRequest) => {
@@ -72,8 +78,64 @@ export default function ManagerDashboard() {
       status: 'rejected',
       rejection_reason: "Rejected by manager"
     });
-    loadRequests();
+    addLog(`Rejected ${req.id}`);
+    
+    // Force immediate reload after rejection
+    setTimeout(() => loadRequests(), 100);
   };
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      openLogin();
+      router.push("/");
+      return;
+    }
+    if (!user) return;
+
+    if (user.corporate_role !== 'manager' && user.corporate_role !== 'senior_manager' && user.corporate_role !== 'admin') {
+      router.push("/mybiz");
+      return;
+    }
+
+    // FORCE IMMEDIATE LOAD
+    console.log('[ManagerPortal] Initial load triggered');
+    loadRequests();
+    setLoading(false);
+    
+    // Auto-fix: If all requests are approved/rejected, offer to reset
+    const allReqs = getApprovalRequests();
+    const hasPending = allReqs.some(r => r.status === 'pending_manager' || r.status === 'pending_senior_manager');
+    if (allReqs.length > 0 && !hasPending) {
+      console.warn('[ManagerPortal] All requests are already processed. Data may be stale.');
+      addLog('⚠️ All requests processed - data may be stale');
+    }
+
+    // Poll every 1 second for faster real-time updates
+    const interval = setInterval(() => {
+      loadRequests();
+    }, 1000);
+
+    // Sync via custom event (same tab) and storage event (cross tab)
+    const handleSync = () => {
+      console.log('[ManagerPortal] Event triggered - syncing...');
+      loadRequests();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'mybiz_approval_requests_v2') {
+        console.log('[ManagerPortal] Storage event detected');
+        handleSync();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('mybiz_requests_updated' as any, handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('mybiz_requests_updated' as any, handleSync);
+    };
+  }, [user, authLoading, router, openLogin, loadRequests]);
 
   if (authLoading || loading) {
     return (
@@ -87,12 +149,30 @@ export default function ManagerDashboard() {
     );
   }
 
-  const pendingRequests = requests.filter(r => 
-    (r.manager_id === user?.id && r.status === 'pending_manager') ||
-    (r.senior_manager_id === user?.id && r.status === 'pending_senior_manager')
-  );
+  const pendingRequests = requests.filter(r => {
+    if (user?.corporate_role === 'admin') {
+      return r.status === 'pending_manager' || r.status === 'pending_senior_manager';
+    }
+    
+    // Normalize IDs for comparison (same as loadRequests logic)
+    const mId = (r.manager_id || "").trim().toLowerCase();
+    const sId = (r.senior_manager_id || "").trim().toLowerCase();
+    const uId = (user?.id || "").trim().toLowerCase();
+    
+    return (mId === uId && r.status === 'pending_manager') ||
+           (sId === uId && r.status === 'pending_senior_manager');
+  });
 
-  const historyRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected');
+  const historyRequests = requests.filter(r => {
+    if (r.status === 'approved' || r.status === 'rejected') return true;
+    
+    // Normalize IDs for comparison
+    const mId = (r.manager_id || "").trim().toLowerCase();
+    const uId = (user?.id || "").trim().toLowerCase();
+    
+    if (r.status === 'pending_senior_manager' && mId === uId && r.manager_approved) return true;
+    return false;
+  });
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -115,12 +195,100 @@ export default function ManagerDashboard() {
               <span className="material-symbols-outlined text-primary text-3xl">fact_check</span>
               Manager Approvals
             </h1>
-            <p className="text-on-surface-variant mt-2 font-medium">Review and manage travel requests from your team.</p>
+            <p className="text-on-surface-variant mt-2 font-medium">
+              Review and manage travel requests from your team. 
+              <span className="ml-2 text-[10px] bg-surface-container-high px-2 py-0.5 rounded text-on-surface-variant/70">
+                User: {user?.id} ({user?.corporate_role})
+              </span>
+            </p>
           </div>
-          <Link href="/mybiz" className="text-primary font-bold hover:underline text-sm uppercase tracking-widest">
-            Back to Dashboard
-          </Link>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setShowDebug(!showDebug)} 
+              className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 hover:text-primary transition-colors"
+            >
+              {showDebug ? 'Hide Debug' : 'System Debug'}
+            </button>
+            <Link href="/mybiz" className="text-primary font-bold hover:underline text-sm uppercase tracking-widest">
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
+
+        {showDebug && (
+          <div className="mb-8 p-4 bg-surface-container-high rounded-2xl border border-outline-variant/20">
+            <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3">System-Wide Request Audit (Debug)</h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+              {getApprovalRequests().length === 0 ? (
+                <p className="text-xs text-on-surface-variant italic text-center py-2">LocalStorage is empty.</p>
+              ) : (
+                getApprovalRequests().map(r => (
+                  <div key={r.id} className="text-[10px] flex justify-between items-center py-1 border-b border-outline-variant/5">
+                    <span>
+                      <strong className="text-on-surface">{r.id}</strong> | {r.employee_name} | {r.type}
+                    </span>
+                    <span className="flex gap-2">
+                      <span className="text-on-surface-variant">Status: <span className="text-primary font-bold">{r.status}</span></span>
+                      <span className="text-on-surface-variant">Manager: <span className="font-bold">{r.manager_id}</span></span>
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-outline-variant/10">
+              <button 
+                onClick={() => {
+                  const testReq: TravelRequest = {
+                    id: 'TEST-' + Math.floor(Math.random() * 1000),
+                    employee_id: 'EMP-001',
+                    employee_name: 'Test John',
+                    type: 'flight',
+                    details: 'Test Flight IndiGo · DEL → BOM',
+                    travel_date: '2026-10-15',
+                    amount: 5500,
+                    spending_limit: 10000,
+                    requires_dual_approval: false,
+                    manager_id: user?.id || 'MGR-001',
+                    senior_manager_id: 'SMGR-001',
+                    manager_approved: false,
+                    senior_manager_approved: false,
+                    status: 'pending_manager',
+                    submitted_at: new Date().toISOString()
+                  };
+                  saveApprovalRequest(testReq);
+                  addLog('Created test request');
+                  loadRequests();
+                }}
+                className="text-[9px] px-3 py-1 bg-emerald-50 text-emerald-600 rounded-md font-bold hover:bg-emerald-100 transition-colors"
+              >
+                Seed Test Request
+              </button>
+              <button 
+                onClick={() => { localStorage.clear(); window.location.reload(); }}
+                className="text-[9px] px-3 py-1 bg-red-50 text-red-600 rounded-md font-bold hover:bg-red-100 transition-colors"
+              >
+                Reset System Data (Clear LocalStorage)
+              </button>
+              <button 
+                onClick={() => { setShowAll(!showAll); addLog(showAll ? 'Standard View' : 'Show All View'); }}
+                className={`text-[9px] px-3 py-1 rounded-md font-bold transition-colors ${showAll ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                {showAll ? 'Standard Filtering: ON' : 'Show All System Requests'}
+              </button>
+              <button 
+                onClick={() => { addLog('Manual sync triggered'); loadRequests(); }}
+                className="text-[9px] px-3 py-1 bg-primary text-white rounded-md font-bold hover:bg-primary-dark transition-colors"
+              >
+                Force Sync State
+              </button>
+            </div>
+            
+            <div className="mt-4 bg-black/5 rounded-lg p-2 font-mono text-[9px] text-on-surface-variant">
+              <p className="font-bold mb-1 border-b border-black/5 pb-1">Activity Log:</p>
+              {logs.map((log, i) => <p key={i}>{log}</p>)}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-4 mb-8">
           <button 
@@ -228,9 +396,11 @@ export default function ManagerDashboard() {
                   <div className="text-right">
                     <p className="font-bold text-on-surface">₹{req.amount.toLocaleString()}</p>
                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                      req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                      req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
+                      req.status === 'pending_senior_manager' ? 'bg-blue-100 text-blue-700' :
+                      'bg-red-100 text-red-700'
                     }`}>
-                      {req.status}
+                      {req.status === 'pending_senior_manager' ? 'Forwarded to Sr Mgr' : req.status}
                     </span>
                   </div>
                 </div>

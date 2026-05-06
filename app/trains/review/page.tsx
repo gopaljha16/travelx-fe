@@ -8,12 +8,14 @@ import { DUMMY_TRAINS } from "@/app/trains/page";
 import { Train as TrainType } from "@/components/TrainCard";
 import { useAuth } from "@/context/AuthContext";
 import { getEmployees, OrgEmployee, getMyOrganization } from "@/lib/api";
+import { saveApprovalRequest } from "@/lib/mock-requests";
 
 function TrainReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -120,8 +122,57 @@ function TrainReviewContent() {
       return;
     }
 
+    // Corporate Approval Logic
+    if (user && (user.corporate_role === 'employee' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager')) {
+      if (employees.length === 0) {
+        setValidationError("Still initializing corporate policy. Please wait a moment and try again.");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const emp = employees.find(e => e.user_id === user.id);
+      const limit = emp?.spending_limit || 10000;
+      const requiresDual = total > limit;
+
+      saveApprovalRequest({
+        id: 'REQ-' + Math.floor(Math.random() * 10000),
+        employee_id: user.id,
+        employee_name: user.name || user.email || 'Employee',
+        type: 'train',
+        details: `${train!.train_name} (${train!.train_number}) · ${train!.departure_station} → ${train!.arrival_station} · ${classType}`,
+        travel_date: train!.departure_date,
+        amount: Math.round(total),
+        spending_limit: limit,
+        requires_dual_approval: requiresDual,
+        manager_id: emp?.manager_id || 'MGR-001',
+        senior_manager_id: emp?.senior_manager_id || 'SMGR-001',
+        manager_approved: false,
+        senior_manager_approved: false,
+        status: 'pending_manager',
+        submitted_at: new Date().toISOString()
+      });
+
+      setRequestSent(true);
+      return;
+    }
+
     router.push(`/bookings/payment?amount=${Math.round(total)}&type=train`);
   };
+
+  if (requestSent) {
+    return (
+      <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 text-center max-w-sm">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={32} />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">Request Submitted</h2>
+          <p className="text-slate-500 mb-6 font-medium">Your train booking request has been sent to your manager for approval.</p>
+          <button onClick={() => router.push('/dashboard')} className="bg-primary text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors">Go to Dashboard</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!mounted || !train) return <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-bold text-slate-500">Loading train details...</div>;
 

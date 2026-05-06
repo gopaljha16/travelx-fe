@@ -142,76 +142,80 @@ export default function MyBizDashboardPage() {
           </div>
         </section>
 
-        {/* Stats Cards */}
-        <section className="max-w-7xl mx-auto px-6 -mt-8 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                icon: <Users size={22} className="text-primary" />,
-                bg: "bg-primary/10",
-                label: "Total Employees",
-                value: employeeCount,
-                sub: "in your organisation",
-              },
-              {
-                icon: <ShieldCheck size={22} className="text-emerald-600" />,
-                bg: "bg-emerald-50",
-                label: "Admins",
-                value: adminCount,
-                sub: "with full access",
-              },
-              {
-                icon: <Wallet size={22} className="text-orange-500" />,
-                bg: "bg-orange-50",
-                label: "Wallet Balance",
-                value: `₹${(org?.wallet_balance ?? 0).toLocaleString()}`,
-                sub: "corporate credits",
-              },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10 shadow-sm p-6 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
-              >
-                <div className={`w-11 h-11 rounded-xl ${stat.bg} flex items-center justify-center shrink-0`}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{stat.label}</p>
-                  <p className="font-headline text-3xl font-black text-on-surface mt-1">{stat.value}</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">{stat.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Org Info + Quick Actions */}
-        <section className="max-w-7xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-
-          {/* Org Details */}
-          <div className="bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10 shadow-sm overflow-hidden">
-            <div className="bg-surface-container-low px-7 py-5 border-b border-outline-variant/10 flex items-center gap-3">
-              <Building2 size={18} className="text-primary" />
-              <h2 className="font-headline text-lg font-black text-on-surface">Organisation Info</h2>
-            </div>
-            <div className="p-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {/* Stats Cards - Admin Only */}
+        {user?.corporate_role === 'admin' && (
+          <section className="max-w-7xl mx-auto px-6 -mt-8 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: "Company Name", value: org?.name },
-                { label: "Business Email", value: org?.email },
-                { label: "GST Number", value: org?.gst_number },
-                { label: "Address", value: org?.address || "—" },
-                { label: "City", value: org?.city || "—" },
-                { label: "State", value: org?.state || "—" },
-                { label: "Country", value: org?.country || "—" },
-                { label: "Registered On", value: org?.created_at ? new Date(org.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-surface-container-low p-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{item.label}</p>
-                  <p className="mt-1.5 font-semibold text-on-surface text-sm">{item.value}</p>
+                {
+                  icon: <Users size={22} className="text-primary" />,
+                  bg: "bg-primary/10",
+                  label: "Total Employees",
+                  value: employeeCount,
+                  sub: "in your organisation",
+                },
+                {
+                  icon: <ShieldCheck size={22} className="text-emerald-600" />,
+                  bg: "bg-emerald-50",
+                  label: "Admins",
+                  value: adminCount,
+                  sub: "with full access",
+                },
+                {
+                  icon: <Wallet size={22} className="text-orange-500" />,
+                  bg: "bg-orange-50",
+                  label: "Wallet Balance",
+                  value: `₹${(org?.wallet_balance ?? 0).toLocaleString()}`,
+                  sub: "corporate credits",
+                },
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  className="bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10 shadow-sm p-6 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <div className={`w-11 h-11 rounded-xl ${stat.bg} flex items-center justify-center shrink-0`}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{stat.label}</p>
+                    <p className="font-headline text-3xl font-black text-on-surface mt-1">{stat.value}</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">{stat.sub}</p>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+        )}
+
+        {/* Content Section */}
+        <section className={`max-w-7xl mx-auto px-6 mt-8 grid grid-cols-1 ${user?.corporate_role === 'admin' ? 'lg:grid-cols-[1fr_360px]' : ''} gap-6`}>
+
+          {/* Org Details - Admin Only */}
+          {user?.corporate_role === 'admin' && (
+            <div className="bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10 shadow-sm overflow-hidden">
+              <div className="bg-surface-container-low px-7 py-5 border-b border-outline-variant/10 flex items-center gap-3">
+                <Building2 size={18} className="text-primary" />
+                <h2 className="font-headline text-lg font-black text-on-surface">Organisation Info</h2>
+              </div>
+              <div className="p-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {[
+                  { label: "Company Name", value: org?.name },
+                  { label: "Business Email", value: org?.email },
+                  { label: "GST Number", value: org?.gst_number },
+                  { label: "Address", value: org?.address || "—" },
+                  { label: "City", value: org?.city || "—" },
+                  { label: "State", value: org?.state || "—" },
+                  { label: "Country", value: org?.country || "—" },
+                  { label: "Registered On", value: org?.created_at ? new Date(org.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl bg-surface-container-low p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{item.label}</p>
+                    <p className="mt-1.5 font-semibold text-on-surface text-sm">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="flex flex-col gap-5">

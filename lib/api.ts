@@ -38,27 +38,32 @@ function mapIdsDeep<T>(value: T): T {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...options.headers },
+      ...options,
+    });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    const detail =
-      Array.isArray(err.detail)
-        ? err.detail.map((entry: { msg?: string }) => entry.msg || JSON.stringify(entry)).join(", ")
-        : err.detail || "Request failed";
-    throw new Error(detail);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Request failed" }));
+      const detail =
+        Array.isArray(err.detail)
+          ? err.detail.map((entry: { msg?: string }) => entry.msg || JSON.stringify(entry)).join(", ")
+          : err.detail || "Request failed";
+      throw new Error(detail);
+    }
+
+    if (res.status === 204) {
+      return undefined as T;
+    }
+
+    const data: T = await res.json();
+    return mapIdsDeep(data);
+  } catch (error) {
+    console.error(`API Request Error [${path}]:`, error);
+    throw error;
   }
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  const data: T = await res.json();
-  return mapIdsDeep(data);
 }
 
 function buildOtpPayload(identifier: string) {
@@ -374,7 +379,14 @@ export const getMyReviews = (page = 1, limit = 10) =>
 export const deleteReview = (id: string) => request<void>(`/reviews/${id}`, { method: "DELETE" });
 
 // Wishlist
-export const getWishlist = () => request<WishlistItem[]>("/wishlist/");
+export const getWishlist = async () => {
+  try {
+    return await request<WishlistItem[]>("/wishlist/");
+  } catch (err) {
+    console.warn("Backend failed, using empty mock wishlist.");
+    return [];
+  }
+};
 
 export const toggleWishlist = (item_id: string, item_type: "hotel" | "bus") =>
   request<{ message: string; is_wishlisted: boolean }>("/wishlist/toggle", {
@@ -498,6 +510,34 @@ export const updateEmployeeManager = async (user_id: string, manager_id: string)
     const emp = MOCK_EMPLOYEES.find(e => e.user_id === user_id);
     if (emp) emp.manager_id = manager_id;
     return { message: "Employee manager updated successfully (mock)" };
+  }
+};
+
+export const updateEmployeeSeniorManager = async (user_id: string, senior_manager_id: string) => {
+  try {
+    return await request<{ message: string }>(
+      `/corporate/organization/employees/${user_id}/senior_manager`,
+      { method: "PUT", body: JSON.stringify({ senior_manager_id }) }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock update senior manager.");
+    const emp = MOCK_EMPLOYEES.find(e => e.user_id === user_id);
+    if (emp) emp.senior_manager_id = senior_manager_id;
+    return { message: "Employee senior manager updated successfully (mock)" };
+  }
+};
+
+export const updateEmployeeSpendingLimit = async (user_id: string, spending_limit: number) => {
+  try {
+    return await request<{ message: string }>(
+      `/corporate/organization/employees/${user_id}/spending_limit`,
+      { method: "PUT", body: JSON.stringify({ spending_limit }) }
+    );
+  } catch (err) {
+    console.warn("Backend failed, using mock update spending limit.");
+    const emp = MOCK_EMPLOYEES.find(e => e.user_id === user_id);
+    if (emp) emp.spending_limit = spending_limit;
+    return { message: "Employee spending limit updated successfully (mock)" };
   }
 };
 

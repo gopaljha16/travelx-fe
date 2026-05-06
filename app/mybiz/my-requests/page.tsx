@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
@@ -14,19 +14,50 @@ export default function MyRequestsPage() {
   const [requests, setRequests] = useState<TravelRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadMyRequests = useCallback((userId: string) => {
+    const allReqs = getApprovalRequests();
+    const myReqs = allReqs
+      .filter(r => r.employee_id === userId)
+      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
+    
+    setRequests(myReqs);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) {
       openLogin();
       router.push("/");
       return;
     }
-    if (user) {
-      const allReqs = getApprovalRequests();
-      // Only show requests for this employee
-      setRequests(allReqs.filter(r => r.employee_id === user.id).sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()));
-      setLoading(false);
-    }
-  }, [user, authLoading, router, openLogin]);
+    if (!user) return;
+
+    loadMyRequests(user.id);
+    setLoading(false);
+
+    // Poll every 1 second for faster real-time updates when manager approves
+    const interval = setInterval(() => {
+      loadMyRequests(user.id);
+    }, 1000);
+
+    // Sync via custom event (same tab) and storage event (cross tab)
+    const handleSync = () => {
+      loadMyRequests(user.id);
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'mybiz_approval_requests_v2') {
+        handleSync();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('mybiz_requests_updated' as any, handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('mybiz_requests_updated' as any, handleSync);
+    };
+  }, [user, authLoading, router, openLogin, loadMyRequests]);
 
   if (authLoading || loading) {
     return (

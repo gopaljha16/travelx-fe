@@ -45,7 +45,7 @@ function FlightReviewContent() {
   const [orgName, setOrgName] = useState("");
 
   useEffect(() => {
-    if (user?.corporate_role === 'admin') {
+    if (user && (user.corporate_role === 'admin' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager' || user.corporate_role === 'employee')) {
       getEmployees().then(list => {
         setEmployees(list);
         if (typeof window !== 'undefined') {
@@ -119,9 +119,24 @@ function FlightReviewContent() {
       return;
     }
 
-    if (user && (user.corporate_role === 'employee' || user.role === 'employee')) {
-      const emp = employees.find(e => e.email === user.email);
+      // Corporate Approval Logic
+      if (user && (user.corporate_role === 'employee' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager')) {
+        if (employees.length === 0) {
+          setValidationError("Still initializing corporate policy. Please wait a moment and try again.");
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        const emp = employees.find(e => e.user_id === user.id);
       const limit = emp?.spending_limit || 10000;
+      
+      // Hard limit check: If amount is > 3x limit, prevent booking
+      if (total > limit * 3) {
+        setValidationError(`This booking (₹${total.toLocaleString()}) severely exceeds your corporate spending limit (₹${limit.toLocaleString()}). You cannot book this fare. Please choose a more economical option.`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       const requiresDual = total > limit;
       
       saveApprovalRequest({

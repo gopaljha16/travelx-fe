@@ -10,6 +10,8 @@ import {
   addEmployee,
   updateEmployeeRole,
   updateEmployeeManager,
+  updateEmployeeSeniorManager,
+  updateEmployeeSpendingLimit,
   removeEmployee,
   OrgEmployee,
   EmployeeAdd
@@ -49,6 +51,8 @@ function EmployeeManagementContent() {
   const [copied, setCopied] = useState(false);
   const [pendingRoleChanges, setPendingRoleChanges] = useState<Record<string, string>>({});
   const [pendingManagerChanges, setPendingManagerChanges] = useState<Record<string, string>>({});
+  const [pendingSeniorManagerChanges, setPendingSeniorManagerChanges] = useState<Record<string, string>>({});
+  const [pendingSpendingLimitChanges, setPendingSpendingLimitChanges] = useState<Record<string, number>>({});
 
   // Form State
   const [newEmployee, setNewEmployee] = useState<EmployeeAdd>({
@@ -83,6 +87,10 @@ function EmployeeManagementContent() {
       return;
     }
     if (currentUser) {
+      if (currentUser.corporate_role !== 'admin') {
+        router.push("/mybiz");
+        return;
+      }
       fetchData();
     }
   }, [authLoading, currentUser, openLogin, router]);
@@ -116,6 +124,40 @@ function EmployeeManagementContent() {
       });
     } catch (err: any) {
       alert(err.message || "Failed to update manager.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUpdateSeniorManager = async (userId: string, newSeniorManagerId: string) => {
+    setActionLoading(userId);
+    try {
+      await updateEmployeeSeniorManager(userId, newSeniorManagerId);
+      setEmployees(prev => prev.map(emp => emp.user_id === userId ? { ...emp, senior_manager_id: newSeniorManagerId } : emp));
+      setPendingSeniorManagerChanges(prev => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+    } catch (err: any) {
+      alert(err.message || "Failed to update senior manager.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUpdateSpendingLimit = async (userId: string, newLimit: number) => {
+    setActionLoading(userId);
+    try {
+      await updateEmployeeSpendingLimit(userId, newLimit);
+      setEmployees(prev => prev.map(emp => emp.user_id === userId ? { ...emp, spending_limit: newLimit } : emp));
+      setPendingSpendingLimitChanges(prev => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+    } catch (err: any) {
+      alert(err.message || "Failed to update spending limit.");
     } finally {
       setActionLoading(null);
     }
@@ -179,7 +221,7 @@ function EmployeeManagementContent() {
       <main className="pt-20 pb-24">
         {/* Header */}
         <section className="bg-surface-container-low px-6 py-12 border-b border-outline-variant/10">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <button 
                 onClick={() => router.push("/mybiz")}
@@ -210,7 +252,7 @@ function EmployeeManagementContent() {
         </section>
 
         {/* Content */}
-        <section className="max-w-7xl mx-auto px-6 py-12">
+        <section className="max-w-[1600px] mx-auto px-6 py-12">
           {employees.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-outline-variant/20 bg-surface-container-lowest p-20 text-center shadow-inner">
                <div className="w-20 h-20 rounded-[2rem] bg-surface-container flex items-center justify-center mb-6">
@@ -236,6 +278,8 @@ function EmployeeManagementContent() {
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Employee</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Identity</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Reporting To</th>
+                        <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Senior Reporting To</th>
+                        <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Spending Limit</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Role</th>
                         <th className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-on-surface-variant text-right">Actions</th>
                       </tr>
@@ -283,6 +327,45 @@ function EmployeeManagementContent() {
                           </td>
                           <td className="px-8 py-6">
                             <select 
+                              value={pendingSeniorManagerChanges[emp.user_id] ?? emp.senior_manager_id ?? ""}
+                              className="text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-none outline-none cursor-pointer transition-all bg-surface-container-high text-on-surface-variant max-w-[200px] text-ellipsis"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === (emp.senior_manager_id || "")) {
+                                  setPendingSeniorManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                } else {
+                                  setPendingSeniorManagerChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                                }
+                              }}
+                              disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                            >
+                              <option value="">None</option>
+                              {employees.filter(e => (e.role === 'senior_manager' || e.role === 'admin') && e.user_id !== emp.user_id).map(m => (
+                                <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-2 bg-surface-container-high rounded-xl px-3 py-1.5 w-fit">
+                              <span className="text-[11px] font-bold text-on-surface-variant/60">₹</span>
+                              <input 
+                                type="number"
+                                value={pendingSpendingLimitChanges[emp.user_id] ?? emp.spending_limit ?? 0}
+                                className="bg-transparent border-none outline-none text-[11px] font-black w-20 text-on-surface"
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  if (val === (emp.spending_limit || 0)) {
+                                    setPendingSpendingLimitChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                  } else {
+                                    setPendingSpendingLimitChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                                  }
+                                }}
+                                disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <select 
                               value={pendingRoleChanges[emp.user_id] || emp.role}
                               className={`text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-none outline-none cursor-pointer transition-all ${
                                 (pendingRoleChanges[emp.user_id] || emp.role) === 'admin' ? 'bg-primary/10 text-primary' : 
@@ -309,12 +392,16 @@ function EmployeeManagementContent() {
                           <td className="px-8 py-6 text-right">
                             <div className="flex justify-end gap-2">
                                {((pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) || 
-                                 (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || ""))) ? (
+                                 (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) ||
+                                 (pendingSeniorManagerChanges[emp.user_id] !== undefined && pendingSeniorManagerChanges[emp.user_id] !== (emp.senior_manager_id || "")) ||
+                                 (pendingSpendingLimitChanges[emp.user_id] !== undefined && pendingSpendingLimitChanges[emp.user_id] !== (emp.spending_limit || 0))) ? (
                                  <>
                                    <button 
                                      onClick={() => {
                                        setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
                                        setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                       setPendingSeniorManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                       setPendingSpendingLimitChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
                                      }}
                                      disabled={actionLoading === emp.user_id}
                                      className="px-4 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-[11px] font-black uppercase tracking-widest hover:bg-surface-container-highest transition-all flex items-center gap-2 disabled:opacity-50"
@@ -328,6 +415,12 @@ function EmployeeManagementContent() {
                                        }
                                        if (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) {
                                          await handleUpdateManager(emp.user_id, pendingManagerChanges[emp.user_id]);
+                                       }
+                                       if (pendingSeniorManagerChanges[emp.user_id] !== undefined && pendingSeniorManagerChanges[emp.user_id] !== (emp.senior_manager_id || "")) {
+                                         await handleUpdateSeniorManager(emp.user_id, pendingSeniorManagerChanges[emp.user_id]);
+                                       }
+                                       if (pendingSpendingLimitChanges[emp.user_id] !== undefined && pendingSpendingLimitChanges[emp.user_id] !== (emp.spending_limit || 0)) {
+                                         await handleUpdateSpendingLimit(emp.user_id, pendingSpendingLimitChanges[emp.user_id]);
                                        }
                                      }}
                                      disabled={actionLoading === emp.user_id}
@@ -425,17 +518,59 @@ function EmployeeManagementContent() {
                           ))}
                         </select>
                       </div>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Senior Rep. To</span>
+                        <select 
+                          value={pendingSeniorManagerChanges[emp.user_id] ?? emp.senior_manager_id ?? ""}
+                          className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border-none outline-none cursor-pointer bg-surface-container-high text-on-surface-variant max-w-[160px] text-ellipsis"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === (emp.senior_manager_id || "")) {
+                              setPendingSeniorManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                            } else {
+                              setPendingSeniorManagerChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                            }
+                          }}
+                          disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                        >
+                          <option value="">None</option>
+                          {employees.filter(e => (e.role === 'senior_manager' || e.role === 'admin') && e.user_id !== emp.user_id).map(m => (
+                            <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Limit (₹)</span>
+                        <input 
+                          type="number"
+                          value={pendingSpendingLimitChanges[emp.user_id] ?? emp.spending_limit ?? 0}
+                          className="bg-surface-container-high border-none outline-none text-[10px] font-black w-20 text-on-surface px-2 py-1 rounded-lg text-right"
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val === (emp.spending_limit || 0)) {
+                              setPendingSpendingLimitChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                            } else {
+                              setPendingSpendingLimitChanges(prev => ({ ...prev, [emp.user_id]: val }));
+                            }
+                          }}
+                          disabled={actionLoading === emp.user_id || emp.user_id === currentUser?.id || emp.role === 'admin'}
+                        />
+                      </div>
                     </div>
                     
                     {emp.user_id !== currentUser?.id && (
                       <div className="mt-4 flex justify-end gap-2">
                         {((pendingRoleChanges[emp.user_id] && pendingRoleChanges[emp.user_id] !== emp.role) || 
-                          (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || ""))) ? (
+                          (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) ||
+                          (pendingSeniorManagerChanges[emp.user_id] !== undefined && pendingSeniorManagerChanges[emp.user_id] !== (emp.senior_manager_id || "")) ||
+                          (pendingSpendingLimitChanges[emp.user_id] !== undefined && pendingSpendingLimitChanges[emp.user_id] !== (emp.spending_limit || 0))) ? (
                           <>
                             <button 
                               onClick={() => {
                                 setPendingRoleChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
                                 setPendingManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                setPendingSeniorManagerChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
+                                setPendingSpendingLimitChanges(prev => { const next = {...prev}; delete next[emp.user_id]; return next; });
                               }}
                               disabled={actionLoading === emp.user_id}
                               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface-variant font-bold text-[11px] uppercase tracking-wider disabled:opacity-50"
@@ -450,6 +585,12 @@ function EmployeeManagementContent() {
                                 }
                                 if (pendingManagerChanges[emp.user_id] !== undefined && pendingManagerChanges[emp.user_id] !== (emp.manager_id || "")) {
                                   await handleUpdateManager(emp.user_id, pendingManagerChanges[emp.user_id]);
+                                }
+                                if (pendingSeniorManagerChanges[emp.user_id] !== undefined && pendingSeniorManagerChanges[emp.user_id] !== (emp.senior_manager_id || "")) {
+                                  await handleUpdateSeniorManager(emp.user_id, pendingSeniorManagerChanges[emp.user_id]);
+                                }
+                                if (pendingSpendingLimitChanges[emp.user_id] !== undefined && pendingSpendingLimitChanges[emp.user_id] !== (emp.spending_limit || 0)) {
+                                  await handleUpdateSpendingLimit(emp.user_id, pendingSpendingLimitChanges[emp.user_id]);
                                 }
                               }}
                               disabled={actionLoading === emp.user_id}
@@ -647,9 +788,8 @@ function EmployeeManagementContent() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Reporting Manager *</label>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Reporting Manager</label>
                           <select 
-                            required
                             className="w-full bg-surface-container-low border-none rounded-2xl py-4 px-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface outline-none appearance-none"
                             value={newEmployee.manager_id}
                             onChange={(e) => setNewEmployee({...newEmployee, manager_id: e.target.value})}
@@ -661,9 +801,8 @@ function EmployeeManagementContent() {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Senior Reporting Manager *</label>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant ml-1">Senior Reporting Manager</label>
                           <select 
-                            required
                             className="w-full bg-surface-container-low border-none rounded-2xl py-4 px-4 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-on-surface outline-none appearance-none"
                             value={newEmployee.senior_manager_id}
                             onChange={(e) => setNewEmployee({...newEmployee, senior_manager_id: e.target.value})}
