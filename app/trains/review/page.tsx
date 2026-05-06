@@ -51,7 +51,7 @@ function TrainReviewContent() {
   const [orgName, setOrgName] = useState("");
 
   useEffect(() => {
-    if (user?.corporate_role === 'admin') {
+    if (user && (user.corporate_role === 'admin' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager' || user.corporate_role === 'employee')) {
       getEmployees().then(list => {
         setEmployees(list);
         if (typeof window !== 'undefined') {
@@ -168,7 +168,7 @@ function TrainReviewContent() {
           </div>
           <h2 className="text-2xl font-black text-slate-900 mb-2">Request Submitted</h2>
           <p className="text-slate-500 mb-6 font-medium">Your train booking request has been sent to your manager for approval.</p>
-          <button onClick={() => router.push('/dashboard')} className="bg-primary text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors">Go to Dashboard</button>
+          <button onClick={() => router.push('/mybiz/my-requests')} className="bg-primary text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors">View My Requests</button>
         </div>
       </div>
     );
@@ -418,7 +418,9 @@ function TrainReviewContent() {
                 </div>
 
                 <button form="booking-form" type="submit" className="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-2 uppercase tracking-wider">
-                  {selectedEmployee ? "Pay with Corporate Wallet" : "Continue to Pay"} <ChevronRight size={18} />
+                  {(user?.corporate_role === 'employee' || user?.role === 'employee') 
+                    ? "Send for Approval" 
+                    : selectedEmployee ? "Pay with Corporate Wallet" : "Continue to Pay"} <ChevronRight size={18} />
                 </button>
              </div>
           </div>

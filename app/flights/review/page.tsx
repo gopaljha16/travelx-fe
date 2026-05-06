@@ -195,7 +195,7 @@ function FlightReviewContent() {
                     <span className="block mt-2 font-semibold">Since this exceeds your spending limit, both your manager and senior manager must approve.</span>
                   }
                 </p>
-                <button onClick={() => router.push('/bookings')} className="voyage-button px-6 py-3 rounded-xl text-white font-bold bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                <button onClick={() => router.push('/mybiz/my-requests')} className="voyage-button px-6 py-3 rounded-xl text-white font-bold bg-emerald-600 hover:bg-emerald-700 transition-colors">
                   View My Requests
                 </button>
               </div>

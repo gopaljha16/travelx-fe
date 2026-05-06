@@ -127,6 +127,7 @@ const initStorage = (): TravelRequest[] => {
 export const getApprovalRequests = (): TravelRequest[] => initStorage();
 
 export const saveApprovalRequest = (req: TravelRequest) => {
+  console.log('[MockRequests] Saving approval request', req);
   const requests = getApprovalRequests();
   // Avoid duplicate IDs
   const existing = requests.findIndex(r => r.id === req.id);
@@ -138,14 +139,13 @@ export const saveApprovalRequest = (req: TravelRequest) => {
   if (typeof window !== 'undefined') {
     // Immediately persist to localStorage
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-    
+    console.log('[MockRequests] Updated localStorage with', requests.length, 'requests');
     // Dispatch events AFTER localStorage is updated
     dispatchStorageEvent(requests);
-    
     // Force a manual trigger for same-tab updates
     setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('mybiz_requests_updated', { 
-        detail: requests 
+      window.dispatchEvent(new CustomEvent('mybiz_requests_updated', {
+        detail: requests
       }));
     }, 50);
   }
