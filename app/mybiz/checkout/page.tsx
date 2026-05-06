@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
+import { saveApprovalRequest } from "@/lib/mock-requests";
+import { getEmployees, OrgEmployee } from "@/lib/api";
 import {
   BriefcaseBusiness,
   ShieldCheck,
@@ -17,11 +21,23 @@ import {
 } from "lucide-react";
 
 export default function MyBizCheckoutPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [isOutOfPolicy, setIsOutOfPolicy] = useState(false);
   const [justification, setJustification] = useState("");
   const [costCenter, setCostCenter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [myEmployeeRecord, setMyEmployeeRecord] = useState<OrgEmployee | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    // Load this employee's org record to get their manager_id
+    getEmployees().then(emps => {
+      const me = emps.find(e => e.user_id === user?.id);
+      if (me) setMyEmployeeRecord(me);
+    }).catch(() => {});
+  }, [user?.id]);
 
   const walletBalance = 250000;
   const fareCost = 8500;
@@ -29,40 +45,48 @@ export default function MyBizCheckoutPage() {
 
   const handleBooking = () => {
     setIsSubmitting(true);
+    setError("");
+
     setTimeout(() => {
+      // Use the real manager_id from the employee's org record.
+      const managerId = myEmployeeRecord?.manager_id || 'MGR-001';
+      const seniorManagerId = myEmployeeRecord?.senior_manager_id || 'SMGR-001';
+      const spendingLimit = myEmployeeRecord?.spending_limit ?? companyPolicy;
+      
+      // Hard limit check: If amount is > 3x limit, prevent booking
+      if (fareCost > spendingLimit * 3) {
+        setError(`This booking (₹${fareCost.toLocaleString()}) severely exceeds your corporate spending limit (₹${spendingLimit.toLocaleString()}). You cannot book this fare.`);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const outOfPolicy = fareCost > spendingLimit;
+
+      const newRequest: any = {
+        id: `REQ-${Date.now()}`,
+        employee_id: user?.id ?? 'EMP-001',
+        employee_name: user?.name ?? 'Unknown Employee',
+        type: 'flight',
+        details: 'IndiGo 6E-212 · DEL → BOM · Economy · 15 Oct',
+        travel_date: '2026-10-15',
+        amount: fareCost,
+        spending_limit: spendingLimit,
+        requires_dual_approval: outOfPolicy,
+        manager_id: managerId,
+        senior_manager_id: seniorManagerId,
+        manager_approved: false,
+        senior_manager_approved: false,
+        status: 'pending_manager',
+        submitted_at: new Date().toISOString(),
+      };
+
+      saveApprovalRequest(newRequest);
+
       setIsSubmitting(false);
       setIsSuccess(true);
     }, 2000);
   };
-
-  if (isSuccess) {
-    return (
-      <div className="bg-background min-h-screen text-on-surface font-body">
-        <Navbar />
-        <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
-          <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
-            <CheckCircle2 size={48} className="text-emerald-600" />
-          </div>
-          <h1 className="font-headline text-4xl font-black text-on-surface mb-2">
-            {isOutOfPolicy ? "Sent for Approval!" : "Booking Confirmed!"}
-          </h1>
-          <p className="text-on-surface-variant max-w-md">
-            {isOutOfPolicy
-              ? "Your booking exceeds the corporate limit and has been routed to your manager for approval."
-              : "Your corporate booking is successful. ₹8,500 has been deducted from the Corporate Wallet. GST invoice has been automatically generated."}
-          </p>
-          <div className="mt-8 flex gap-4">
-            <Link href="/mybiz/portal" className="px-6 py-3 rounded-xl bg-surface-container-high font-bold hover:bg-surface-container-highest transition-colors">
-              Back to Portal
-            </Link>
-            <Link href="/profile" className="voyage-button px-6 py-3 rounded-xl text-white font-bold inline-flex items-center gap-2">
-              View Trips <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-background min-h-screen text-on-surface font-body pb-24">
@@ -74,6 +98,24 @@ export default function MyBizCheckoutPage() {
           <ChevronRight size={14} />
           <span className="text-primary">Corporate Checkout</span>
         </div>
+
+        {error && (
+          <div className="mb-8 bg-red-50 border border-red-200 rounded-3xl p-6 flex items-start gap-4 animate-in slide-in-from-top-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+              <AlertTriangle className="text-red-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-red-900 text-lg">Booking Restricted</h3>
+              <p className="text-red-700 font-medium">{error}</p>
+              <button 
+                onClick={() => router.push('/mybiz/portal')}
+                className="mt-4 text-sm font-black uppercase tracking-widest text-red-800 hover:underline flex items-center gap-2"
+              >
+                Go back to portal <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
           
@@ -258,6 +300,49 @@ export default function MyBizCheckoutPage() {
 
         </div>
       </main>
+
+      {isSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-on-surface/40 backdrop-blur-md">
+          <div className="w-full max-w-md bg-surface rounded-[3rem] shadow-2xl border border-outline-variant/10 p-10 text-center animate-in zoom-in-95">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 size={40} className="text-emerald-600" />
+            </div>
+            
+            <h2 className="font-headline text-2xl font-black text-on-surface mb-2">
+              {isOutOfPolicy ? "Request Sent for Approval!" : "Booking Confirmed!"}
+            </h2>
+            
+            <p className="text-on-surface-variant font-medium mb-8">
+              {isOutOfPolicy
+                ? "Your travel request has been submitted. Your manager will review and approve it shortly."
+                : "Your corporate booking is confirmed. ₹8,500 has been deducted from the corporate wallet."
+              }
+            </p>
+            
+            {isOutOfPolicy && (
+              <div className="flex items-center justify-center gap-2 mb-8 px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-sm font-bold w-fit mx-auto">
+                <Clock size={16} />
+                Pending Manager Approval
+              </div>
+            )}
+            
+            <div className="flex gap-3">
+              <Link 
+                href="/mybiz/portal"
+                className="flex-1 py-3 rounded-2xl bg-surface-container-high text-on-surface font-bold hover:bg-surface-container-highest transition-colors text-sm"
+              >
+                Back to Portal
+              </Link>
+              <Link 
+                href="/mybiz/my-requests"
+                className="flex-1 voyage-button py-3 rounded-2xl text-white font-bold text-sm inline-flex items-center justify-center gap-2"
+              >
+                View Status <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

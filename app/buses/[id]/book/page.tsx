@@ -138,8 +138,14 @@ function BookingContent() {
     setBookingLoading(true);
     setError("");
     try {
-      if (user.corporate_role === 'employee' || user.role === 'employee') {
-        const emp = employees.find(e => e.email === user.email);
+      if (user && (user.corporate_role === 'employee' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager')) {
+        if (employees.length === 0) {
+          setError("Still initializing corporate policy. Please wait a moment and try again.");
+          setBookingLoading(false);
+          return;
+        }
+
+        const emp = employees.find(e => e.user_id === user.id);
         const limit = emp?.spending_limit || 10000;
         const requiresDual = totalPrice > limit;
         

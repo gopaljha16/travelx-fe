@@ -47,6 +47,26 @@ export default function BookingsPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
 
+  const loadAllData = () => {
+    if (!user) return;
+    Promise.all([
+      getMyBookings(), 
+      getMyBusBookings(),
+      (user.corporate_role === 'employee' || user.corporate_role === 'manager' || user.corporate_role === 'senior_manager') 
+        ? Promise.resolve(getEmployeeRequests(user.id)) 
+        : Promise.resolve([])
+    ])
+      .then(([hotels, buses, reqs]) => {
+        setHotelBookings(hotels);
+        setBusBookings(buses.bookings);
+        setRequests(reqs);
+      })
+      .catch((error: unknown) => {
+        setFeedback(error instanceof Error ? error.message : "Failed to load bookings");
+      })
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/");
@@ -54,20 +74,23 @@ export default function BookingsPage() {
     }
 
     if (user) {
-      Promise.all([
-        getMyBookings(), 
-        getMyBusBookings(),
-        user.corporate_role === 'employee' ? Promise.resolve(getEmployeeRequests(user.id)) : Promise.resolve([])
-      ])
-        .then(([hotels, buses, reqs]) => {
-          setHotelBookings(hotels);
-          setBusBookings(buses.bookings);
-          setRequests(reqs);
-        })
-        .catch((error: unknown) => {
-          setFeedback(error instanceof Error ? error.message : "Failed to load bookings");
-        })
-        .finally(() => setLoading(false));
+      loadAllData();
+      // Real-time updates for corporate approvals
+      const interval = setInterval(loadAllData, 3000);
+      
+      const handleSync = () => loadAllData();
+      const handleStorage = (e: StorageEvent) => {
+        if (e.key === 'mybiz_approval_requests_v2') handleSync();
+      };
+
+      window.addEventListener('storage', handleStorage);
+      window.addEventListener('mybiz_requests_updated' as any, handleSync);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('storage', handleStorage);
+        window.removeEventListener('mybiz_requests_updated' as any, handleSync);
+      };
     }
   }, [authLoading, router, user]);
 
